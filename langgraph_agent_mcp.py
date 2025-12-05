@@ -1,3 +1,4 @@
+
 from typing import TypedDict, Annotated, Sequence, Literal
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -11,19 +12,10 @@ import json
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-import anyio
-from typing import Optional
-
-from agentic_tools import (
-    direct_signup, direct_login, direct_get_user,
-    direct_research_list, direct_chat_ask,
-    direct_summarize_research, direct_summarize_video,
-    direct_chat_history_list, direct_chat_history_get, direct_chat_history_delete
-)
-
 
 load_dotenv()
 
+MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://localhost:4000/mcp")
 
 
 class AgentState(TypedDict):
@@ -31,6 +23,53 @@ class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
     volvox_token: str
     project_tokens: dict  
+
+def call_mcp_tool(tool_name: str, arguments: dict) -> dict:
+    """
+    Call a tool through the Python MCP server
+    
+    Args:
+        tool_name: Name of the tool to call
+        arguments: Tool arguments
+    
+    Returns:
+        Tool execution result
+    """
+    try:
+        mcp_request = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": tool_name,
+                "arguments": arguments
+            }
+        }
+        
+        with httpx.Client(timeout=300.0) as client:
+            response = client.post(
+                MCP_SERVER_URL,
+                json=mcp_request,
+                headers={"Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            # Extract content from MCP response
+            if "result" in result and "content" in result["result"]:
+                content = result["result"]["content"]
+                if isinstance(content, list) and len(content) > 0:
+                    text_content = content[0].get("text", "")
+                    try:
+                        return json.loads(text_content)
+                    except:
+                        return {"result": text_content}
+            
+            return result
+            
+    except Exception as e:
+        return {"error": f"MCP call failed: {str(e)}"}
 
 
 @tool
@@ -47,7 +86,11 @@ def volvox_signup(email:str, password: str, fullName: str)->dict:
     Returns:
         Authentication response with access_token
     """
-    return anyio.run(direct_signup, email, password, fullName)
+    return call_mcp_tool("volvox_auth_signup", {
+        "email": email,
+        "password": password,
+        "fullName": fullName
+    })
 
 @tool
 def volvox_login(email: str, password: str) -> dict:
@@ -62,32 +105,38 @@ def volvox_login(email: str, password: str) -> dict:
     Returns:
         Authentication response with access_token
     """
-    return anyio.run(direct_login, email, password)
+    return call_mcp_tool("volvox_auth_login", {
+        "email": email,
+        "password": password
+    })
 
 @tool
-def volvox_auth_get_user(token: str):
-    """Get current user info"""
-    return anyio.run(direct_get_user, token)
+def volvox_search_documents(token: str, search: str = "", limit: int = 20,
+                           start_date: str = "", end_date: str = "") -> dict:
+    """
+    Search and list user's research documents.
+    Can filter by keywords, date range, and limit results.
+    
+    Args:
+        token: JWT token from login
+        search: Search query for document/file names
+        limit: Maximum number of results (default 20)
+        start_date: Filter start date (ISO format YYYY-MM-DD)
+        end_date: Filter end date (ISO format YYYY-MM-DD)
+    
+    Returns:
+        List of research documents with metadata
+    """
+    args = {"token": token, "limit": limit}
+    if search:
+        args["search"] = search
+    if start_date:
+        args["start"] = start_date
+    if end_date:
+        args["end"] = end_date
+    
+    return call_mcp_tool("volvox_research_list", args)
 
-@tool
-def volvox_search_documents(
-    token: str,
-    limit: int = 20,
-    offset: int = 0,
-    search: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None
-):
-    """List research documents with filters"""
-    return anyio.run(
-        direct_research_list,
-        token,
-        limit,
-        offset,
-        search,
-        start_date,
-        end_date
-    )
 @tool
 def volvox_ask_document(token: str, question: str, 
                        document_id: str = "", chat_id: str = "") -> dict:
@@ -104,7 +153,13 @@ def volvox_ask_document(token: str, question: str,
     Returns:
         AI response with answer based on document content
     """
-    return anyio.run(direct_chat_ask, token, question, document_id, chat_id)
+    args = {"token": token, "question": question}
+    if document_id:
+        args["document_id"] = document_id
+    if chat_id:
+        args["chat_id"] = chat_id
+    
+    return call_mcp_tool("volvox_chat_ask", args)
 
 @tool
 def volvox_summarize_documents(token: str, document_ids: list[str]) -> dict:
@@ -119,7 +174,10 @@ def volvox_summarize_documents(token: str, document_ids: list[str]) -> dict:
     Returns:
         Comprehensive summary of all documents
     """
-    return anyio.run(direct_summarize_research, token, document_ids)
+    return call_mcp_tool("volvox_summarize_research", {
+        "token": token,
+        "document_ids": document_ids
+    })
 
 @tool
 def volvox_summarize_video(token: str, video_url:str)->dict:
@@ -134,17 +192,34 @@ def volvox_summarize_video(token: str, video_url:str)->dict:
     Returns:
         Comprehensive summary video whose url is added
     """
-    return anyio.run(direct_summarize_video, token, video_url)
+    return call_mcp_tool("volvox_summarize_video",{
+        "token": token,
+        "video_url": video_url
+    })
 
 @tool
-def volvox_chat_history_list(token: str):
-    """List all conversations"""
-    return anyio.run(direct_chat_history_list, token)
-
-@tool
-def volvox_chat_history_get(token: str, chat_id: str):
-    """Get full conversation with messages of a chat"""
-    return anyio.run(direct_chat_history_get, token, chat_id)
+def volvox_get_chat_history(token: str, chat_id: str = "") -> dict:
+    """
+    Get chat conversation history.
+    If chat_id provided, gets specific conversation.
+    Otherwise lists all conversations.
+    
+    Args:
+        token: JWT token
+        chat_id: Optional - specific chat ID
+    
+    Returns:
+        Chat history or list of chats
+    """
+    if chat_id:
+        return call_mcp_tool("volvox_chat_history_get", {
+            "token": token,
+            "chat_id": chat_id
+        })
+    else:
+        return call_mcp_tool("volvox_chat_history_list", {
+            "token": token
+        })
 
 @tool
 def volvox_delete_chat_history(token: str, chat_id: str)->str:
@@ -158,7 +233,10 @@ def volvox_delete_chat_history(token: str, chat_id: str)->str:
     Returns:
         Successful Deletion Message
     """
-    return anyio.run(direct_chat_history_delete, token, chat_id)
+    return call_mcp_tool("volvox_chat_history_delete", {
+            "token": token,
+            "chat_id": chat_id
+        })
 
 
 SYSTEM_PROMPT = """You are an expert automation assistant.
@@ -212,13 +290,11 @@ def call_model(state: AgentState):
     llm_with_tools = llm.bind_tools([
         volvox_signup,
         volvox_login,
-        volvox_auth_get_user,
         volvox_search_documents,
         volvox_ask_document,
         volvox_summarize_documents,
         volvox_summarize_video,
-        volvox_chat_history_list,
-        volvox_chat_history_get,
+        volvox_get_chat_history,
         volvox_delete_chat_history
     ])
     
@@ -247,13 +323,11 @@ def create_agent():
     tool_node = ToolNode([
         volvox_signup,
         volvox_login,
-        volvox_auth_get_user,
         volvox_search_documents,
         volvox_ask_document,
         volvox_summarize_documents,
         volvox_summarize_video,
-        volvox_chat_history_list,
-        volvox_chat_history_get,
+        volvox_get_chat_history,
         volvox_delete_chat_history
     ])
 
@@ -350,6 +424,8 @@ def stream_agent(query: str, token: str = "", thread_id: str = None):
 if __name__ == "__main__":
     
     print(" LangGraph Agent + Python MCP Server")
+    
+    print(f" MCP Server: {MCP_SERVER_URL}")
 
     print("\n Example: Simple Query")
     result = run_agent(

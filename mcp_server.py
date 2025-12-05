@@ -1,8 +1,3 @@
-"""
-FINAL WORKING Unified Python MCP Server
-Full debug logging on EVERY tool
-Tested & working with Volvox Render backend (Dec 2025)
-"""
 from langgraph_agent import run_agent
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,14 +13,11 @@ import traceback
 
 load_dotenv()
 
-# ============ Config ============
-VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://volvox-backend.onrender.com/api/v1")
+VOLVOX_API = os.getenv("VOLVOX_API_URL", "http://localhost:8000/api/v1")
 
-# ============ FastAPI ============
 app = FastAPI(title="Unified MCP Server", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-# ============ MCP Models ============
 class MCPRequest(BaseModel):
     jsonrpc: str = "2.0"
     id: int
@@ -40,9 +32,7 @@ class MCPToolResult(BaseModel):
     content: List[MCPToolContent]
     isError: Optional[bool] = None
 
-# ============ Tools List ============
 TOOLS = [
-    # ========== VOLVOX TOOLS ==========
     {
         "name": "run_agent",
         "description": "Run agent to achieve goal through agentic workflow",
@@ -185,7 +175,6 @@ TOOLS = [
     },
 ]
 
-# ============ Debug Helpers ============
 def log_tool(tool_name: str, args: dict, url: str, method: str = "POST"):
     print("\n" + "═" * 100)
     print(f"TOOL → {tool_name.upper()} @ {datetime.now().isoformat()}")
@@ -200,7 +189,6 @@ def safe_return(data: Any, is_error: bool = False):
     print("═" * 100 + "\n")
     return MCPToolResult(content=[MCPToolContent(text=text)], isError=is_error or None)
 
-# ============ ALL TOOLS WITH FULL LOGGING ============
 async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResult:
     try:
         async with httpx.AsyncClient(
@@ -212,9 +200,8 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
             if tool_name== "run_agent":
                 query= arguments["query"]
                 resp= run_agent(query,token="")
-                return safe_return(resp.json())
+                return safe_return(resp)
 
-            # ── LOGIN ─────────────────────────────────────
             elif tool_name== "volvox_auth_signup":
                 log_tool(tool_name, arguments, f"{VOLVOX_API}/auth/signup")
                 resp= await client.post(f"{VOLVOX_API}/auth/signup",json=arguments)
@@ -231,15 +218,12 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                     return safe_return({"error": "Login failed", "detail": resp.text}, True)
                 return safe_return(resp.json())
 
-            # ── GET USER ──────────────────────────────────
             elif tool_name == "volvox_auth_get_user":
                 log_tool(tool_name, arguments, f"{VOLVOX_API}/auth/me", "GET")
                 resp = await client.get(f"{VOLVOX_API}/auth/me", headers={"Authorization": f"Bearer {arguments['token']}"})
                 print(f"Status: {resp.status_code} | Body: {resp.text}")
                 return safe_return(resp.json() if resp.status_code == 200 else {"error": resp.text}, resp.status_code != 200)
 
-            # ── RESEARCH LIST ─────────────────────────────
-                        # RESEARCH LIST — FINAL CORRECT VERSION (GET + query params)
             elif tool_name == "volvox_research_list":
                 token = arguments["token"]
                 limit = arguments.get("limit", 20)
@@ -279,8 +263,6 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 data = resp.json()
                 return safe_return(data)
 
-            
-            # ── CHAT ASK (THE ONE THAT WAS BROKEN) ────────
             elif tool_name == "volvox_chat_ask":
                 params = {"question": arguments["question"]}
                 if arguments.get("document_id"):
@@ -293,8 +275,8 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
 
                 resp = await client.post(
                     f"{VOLVOX_API}/chat/ask",
-                    params=params,           # THIS IS THE CORRECT WAY
-                    json={},                 # empty body
+                    params=params,           
+                    json={},                 
                     headers={"Authorization": f"Bearer {arguments['token']}"}
                 )
                 print(f"Status: {resp.status_code} | Body: {resp.text}")
@@ -302,7 +284,6 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                     return safe_return({"error": f"HTTP {resp.status_code}", "detail": resp.text}, True)
                 return safe_return(resp.json())
 
-            # ── SUMMARIZE ─────────────────────────────────
             elif tool_name == "volvox_summarize_research":
                 log_tool(tool_name, arguments, f"{VOLVOX_API}/chat/summarize-research")
                 resp = await client.post(
@@ -331,7 +312,6 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
 
                 return safe_return({"summary": resp.text.strip()})
 
-            # ── CHAT HISTORY ──────────────────────────────
             elif tool_name == "volvox_chat_history_list":
                 log_tool(tool_name, arguments, f"{VOLVOX_API}/chat/chatHistory", "GET")
                 resp = await client.get(f"{VOLVOX_API}/chat/chatHistory", headers={"Authorization": f"Bearer {arguments['token']}"})
@@ -360,7 +340,6 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
         traceback.print_exc()
         return safe_return({"error": str(e)}, True)
 
-# ============ MCP Endpoint ============
 @app.post("/mcp")
 async def mcp_endpoint(request: Request):
     try:
@@ -385,11 +364,9 @@ async def mcp_endpoint(request: Request):
     except Exception as e:
         return JSONResponse(status_code=500, content={"jsonrpc": "2.0", "id": 0, "error": {"code": -32603, "message": str(e)}})
 
-# ============ Debug Endpoints ============
 @app.get("/")
 async def root(): return {"service": "Unified MCP Server", "status": "running", "tools": len(TOOLS)}
 
-# ============ Run ============
 if __name__ == "__main__":
     import uvicorn
     print("Unified MCP Server with FULL DEBUG LOGGING STARTED")
