@@ -34,7 +34,7 @@ async def get_user_from_token(token: str):
 
 load_dotenv()
 
-VOLVOX_API = os.getenv("VOLVOX_API_URL", "http://localhost:8000/api/v1")
+VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://volvox-backend-integrated-production.up.railway.app/api/v1")
 
 app = FastAPI(title="Unified MCP Server", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
