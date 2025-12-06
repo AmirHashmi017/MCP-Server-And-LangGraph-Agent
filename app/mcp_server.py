@@ -17,6 +17,12 @@ from app.unified_auth.middleware.auth import get_current_user
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
+from app.agentic_tools.agentic_tools import (
+    direct_research_list, direct_chat_ask,
+    direct_summarize_research, direct_summarize_video,
+    direct_chat_history_list, direct_chat_history_get, direct_chat_history_delete
+)
+
 async def get_user_from_token(token: str):
     if not token:
         raise HTTPException(status_code=401, detail="Token missing")
@@ -249,7 +255,7 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
 
             if tool_name== "run_agent":
                 query= arguments["query"]
-                resp= run_agent(query,user_id=str(current_user.id))
+                resp= await run_agent(query,user_id=str(current_user.id))
                 return safe_return(resp)
 
             elif tool_name == "volvox_auth_get_user":
@@ -261,111 +267,44 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 )
 
             elif tool_name == "volvox_research_list":
-                token = arguments["token"]
-                limit = arguments.get("limit", 20)
-                offset = arguments.get("offset", 0)
-                search = arguments.get("search")
-                start_date = arguments.get("start_date")   
-                end_date = arguments.get("end_date")        
-
-                params = {
-                    "user_id": current_user.id,
-                    "limit": limit,
-                    "offset": offset
-                }
-                if search:
-                    params["search"] = search
-                if start_date:
-                    params["start"] = start_date
-                if end_date:
-                    params["end"] = end_date
-
-                log_tool(tool_name, arguments, f"{VOLVOX_API}/research", "GET")
-                print(f"GET → {VOLVOX_API}/research?{httpx.QueryParams(params)}")
-
-                resp = await client.get(
-                    f"{VOLVOX_API}/research/",
-                    params=params
+                result = await direct_research_list(
+                user_id=current_user.id,
+                limit=arguments.get("limit", 20),
+                offset=arguments.get("offset", 0),
+                search=arguments.get("search"),
+                start_date=arguments.get("start_date"),
+                end_date=arguments.get("end_date")
                 )
-
-                print(f"Status: {resp.status_code} | Body: {resp.text}")
-
-                if resp.status_code != 200:
-                    return safe_return({
-                        "error": f"HTTP {resp.status_code}",
-                        "detail": resp.text
-                    }, True)
-
-                data = resp.json()
-                return safe_return(data)
+                return safe_return(result)
 
             elif tool_name == "volvox_chat_ask":
-                params = {"user_id":current_user.id, "question": arguments["question"]}
-                if arguments.get("document_id"):
-                    params["document_id"] = arguments["document_id"]
-                if arguments.get("chat_id"):
-                    params["chat_id"] = arguments["chat_id"]
-
-                log_tool(tool_name, arguments, f"{VOLVOX_API}/chat/ask")
-                print(f"Sending as QUERY PARAMS → ?{httpx.QueryParams(params)}")
-
-                resp = await client.post(
-                    f"{VOLVOX_API}/chat/ask",
-                    params=params,           
-                    json={}
+                result = await direct_chat_ask(
+                user_id=current_user.id,
+                question=arguments["question"],
+                document_id=arguments.get("document_id"),
+                chat_id=arguments.get("chat_id")
                 )
-                print(f"Status: {resp.status_code} | Body: {resp.text}")
-                if resp.status_code != 200:
-                    return safe_return({"error": f"HTTP {resp.status_code}", "detail": resp.text}, True)
-                return safe_return(resp.json())
+                return safe_return(result)
 
             elif tool_name == "volvox_summarize_research":
-                log_tool(tool_name, arguments, f"{VOLVOX_API}/chat/summarize-research")
-                resp = await client.post(
-                    f"{VOLVOX_API}/chat/summarize-research",
-                    json={"documents": arguments["document_ids"]}
-                )
-                print(f"Status: {resp.status_code} | Body: {resp.text}")
-                return safe_return(resp.json() if resp.status_code == 200 else {"error": resp.text}, resp.status_code != 200)
+                result = await direct_summarize_research(arguments["document_ids"])
+                return safe_return(result)
 
             elif tool_name == "volvox_summarize_video":
-                video_url = arguments["video_url"]
-
-                log_tool(tool_name, arguments, f"{VOLVOX_API}/chat/summarize-video")
-
-                resp = await client.post(
-                    f"{VOLVOX_API}/chat/summarize-video?video_url={video_url}"
-                )
-
-                print(f"Status: {resp.status_code} | Body: {resp.text}")
-
-                if resp.status_code != 200:
-                    return safe_return({"error": f"HTTP {resp.status_code}", "detail": resp.text}, True)
-
-                return safe_return({"summary": resp.text.strip()})
+                result = await direct_summarize_video(arguments["video_url"])
+                return safe_return(result)
 
             elif tool_name == "volvox_chat_history_list":
-                params = {"user_id":current_user.id}
-                log_tool(tool_name, arguments, f"{VOLVOX_API}/chat/chatHistory", "GET")
-                resp = await client.get(f"{VOLVOX_API}/chat/chatHistory", params=params )
-                print(f"Status: {resp.status_code} | Body: {resp.text}")
-                return safe_return(resp.json() if resp.status_code == 200 else {"error": resp.text}, resp.status_code != 200)
+                result = await direct_chat_history_list(current_user.id)
+                return safe_return(result)
 
             elif tool_name == "volvox_chat_history_get":
-                params = {"user_id":current_user.id}
-                url = f"{VOLVOX_API}/chat/chatHistory/{arguments['chat_id']}"
-                log_tool(tool_name, arguments, url, "GET")
-                resp = await client.get(url, params=params)
-                print(f"Status: {resp.status_code} | Body: {resp.text}")
-                return safe_return(resp.json() if resp.status_code == 200 else {"error": resp.text}, resp.status_code != 200)
+                result = await direct_chat_history_get(current_user.id, arguments["chat_id"])
+                return safe_return(result)
             
             elif tool_name == "volvox_chat_history_delete":
-                params = {"user_id":current_user.id}
-                url = f"{VOLVOX_API}/chat/deleteChat/{arguments['chat_id']}"
-                log_tool(tool_name, arguments, url, "DELETE")
-                resp = await client.delete(url, params=params)
-                print(f"Status: {resp.status_code} | Body: {resp.text}")
-                return safe_return(resp.json() if resp.status_code == 200 else {"error": resp.text}, resp.status_code != 200)
+                result = await direct_chat_history_delete(current_user.id, arguments["chat_id"])
+                return safe_return(result)
 
             else:
                 return safe_return({"error": f"Unknown tool: {tool_name}"}, True)
