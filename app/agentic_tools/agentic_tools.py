@@ -1,8 +1,9 @@
 import httpx
 from typing import Dict, Any, List, Optional
+from fastapi import UploadFile
 
 VOLVOX_API = "http://localhost:8000/api/v1"
-DEFAULT_TIMEOUT = 300.0
+DEFAULT_TIMEOUT = 300.0   
 
 async def direct_research_list(
     user_id: str,
@@ -72,3 +73,59 @@ async def direct_chat_history_delete(user_id: str, chat_id: str) -> Dict[str, An
     async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
         r = await client.delete(f"{VOLVOX_API}/chat/deleteChat/{chat_id}", params={"user_id": user_id})
         return r.json() if r.status_code == 200 else {"error": r.text}
+    
+async def direct_research_create(
+    user_id: str,
+    researchName: str,
+    file: UploadFile
+) -> Dict[str, Any]:
+
+    query_params = {"user_id": user_id}
+    data = {"researchName": researchName}  
+    files = {
+        "file": (file.filename, await file.read(), file.content_type or "application/octet-stream")
+    }
+
+    async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
+        r = await client.post(
+            f"{VOLVOX_API}/research/addResearch",
+            params=query_params,  
+            data=data,
+            files=files
+        )
+    return r.json() if r.status_code in (200, 201) else {"error": r.text, "status_code": r.status_code}
+
+async def direct_research_update(
+    user_id: str,
+    research_id: str,
+    researchName: Optional[str] = None,
+    file: Optional[UploadFile] = None
+) -> Dict[str, Any]:
+    query_params = {"user_id": user_id}
+    data = {}
+    files = None
+
+    if researchName:
+        data["researchName"] = researchName
+    if file:
+        files = {
+            "file": (file.filename, await file.read(), file.content_type or "application/octet-stream")
+        }
+
+    async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
+        r = await client.patch(
+            f"{VOLVOX_API}/research/updateResearch/{research_id}",
+            params=query_params,  
+            data=data,
+            files=files
+        )
+    return r.json() if r.status_code == 200 else {"error": r.text, "status_code": r.status_code}
+
+async def direct_research_delete(user_id: str, research_id: str) -> Dict[str, Any]:
+    async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
+        r = await client.delete(
+            f"{VOLVOX_API}/research/deleteResearch/{research_id}",
+            params={"user_id": user_id}
+        )
+        return r.json() if r.status_code == 200 else {"error": r.text}
+ 

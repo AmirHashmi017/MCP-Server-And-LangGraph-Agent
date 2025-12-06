@@ -20,8 +20,10 @@ from fastapi.security import HTTPAuthorizationCredentials
 from app.agentic_tools.agentic_tools import (
     direct_research_list, direct_chat_ask,
     direct_summarize_research, direct_summarize_video,
-    direct_chat_history_list, direct_chat_history_get, direct_chat_history_delete
+    direct_chat_history_list, direct_chat_history_get, direct_chat_history_delete,
+    direct_research_create,direct_research_update,direct_research_delete
 )
+from fastapi import File, UploadFile
 
 async def get_user_from_token(token: str):
     if not token:
@@ -70,6 +72,18 @@ TOOLS = [
                 "query": {"type": "string", "description": "User Query to perform tasks"}
             },
             "required": ["token","query"]
+        }
+    },
+    {
+        "name": "run_file_agent",
+        "description": "Run agent to achieve goal through agentic workflow",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "token": {"type": "string"},
+                "researchName": {"type": "string"}
+            },
+            "required": ["token","researchName"]
         }
     },
     {
@@ -122,6 +136,43 @@ TOOLS = [
                 "end_date": {"type": "string", "description": "ISO date string"}
             },
             "required": ["token"]
+        }
+    },
+    {
+    "name": "volvox_research_create",
+    "description": "Upload a new research document (PDF, DOCX, etc.) for the user. Send as multipart/form-data.",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "researchName": {"type": "string"}
+        },
+        "required": ["token", "researchName"] 
+    }
+    },
+    {
+        "name": "volvox_research_update",
+        "description": "Update research name and/or replace file. Use multipart/form-data if uploading new file.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "token": {"type": "string"},
+                "research_id": {"type": "string"},
+                "researchName": {"type": "string"}
+            },
+            "required": ["token", "research_id"]
+        }
+    },
+    {
+        "name": "volvox_research_delete",  
+        "description": "Delete research document",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "token": {"type": "string"},
+                "research_id": {"type": "string"}
+            },
+            "required": ["token", "research_id"]
         }
     },
     {
@@ -257,6 +308,25 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 query= arguments["query"]
                 resp= await run_agent(query,user_id=str(current_user.id))
                 return safe_return(resp)
+            
+            if tool_name== "run_file_agent":
+                file = arguments.get("uploaded_file")
+                if not file:
+                    return safe_return({"error": "File is required for research creation"}, True)
+
+                result = await direct_research_create(
+                    user_id=str(current_user.id),
+                    researchName=arguments["researchName"],
+                    file=file 
+                )
+                if isinstance(result, dict) and "_id" in result:
+                    research_id = result["_id"]   
+                else:
+                    return safe_return({"error": "Failed to create research – no ID returned"}, True)
+                
+                query= f"Summarize the content of the Research having ResearchID={research_id}"
+                resp= await run_agent(query,user_id=str(current_user.id))
+                return safe_return(resp)
 
             elif tool_name == "volvox_auth_get_user":
                 return UserResponse(
@@ -305,6 +375,34 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
             elif tool_name == "volvox_chat_history_delete":
                 result = await direct_chat_history_delete(current_user.id, arguments["chat_id"])
                 return safe_return(result)
+            
+            elif tool_name == "volvox_research_create":
+                file = arguments.get("uploaded_file")
+                if not file:
+                    return safe_return({"error": "File is required for research creation"}, True)
+
+                result = await direct_research_create(
+                    user_id=str(current_user.id),
+                    researchName=arguments["researchName"],
+                    file=file 
+                )
+                return safe_return(result)
+
+            elif tool_name == "volvox_research_update":
+                result = await direct_research_update(
+                    user_id=str(current_user.id),
+                    research_id=arguments["research_id"],
+                    researchName=arguments.get("researchName"),
+                    file=arguments.get("uploaded_file")
+                )
+                return safe_return(result)
+
+            elif tool_name == "volvox_research_delete":
+                result = await direct_research_delete(
+                    user_id=str(current_user.id),
+                    research_id=arguments["research_id"]
+                )
+                return safe_return(result)
 
             else:
                 return safe_return({"error": f"Unknown tool: {tool_name}"}, True)
@@ -316,14 +414,34 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
 
 @app.post("/mcp")
 async def mcp_endpoint(request: Request):
-    try:
+
+    content_type = request.headers.get("content-type", "")
+    uploaded_file: Optional[UploadFile] = None
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        jsonrpc_field = form.get("jsonrpc")
+        if not jsonrpc_field:
+            return JSONResponse(status_code=400, content={"error": "Missing jsonrpc field"})
+        try:
+            body = json.loads(jsonrpc_field)
+        except json.JSONDecodeError:
+            return JSONResponse(status_code=400, content={"error": "Invalid jsonrpc JSON"})
+        req = MCPRequest(**body)
+        uploaded_file = form.get("file")
+
+    else: 
         body = await request.json()
         req = MCPRequest(**body)
-
+    
+    try:
         if req.method == "tools/list":
             return {"jsonrpc": "2.0", "id": req.id, "result": {"tools": TOOLS}}
 
         if req.method == "tools/call":
+            arguments = req.params.get("arguments", {})
+            if uploaded_file is not None:
+                arguments["uploaded_file"] = uploaded_file
             result = await execute_tool(req.params["name"], req.params.get("arguments", {}))
             return {"jsonrpc": "2.0", "id": req.id, "result": result.dict()}
 
