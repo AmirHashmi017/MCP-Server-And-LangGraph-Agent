@@ -174,7 +174,7 @@ async def run_agent(query: str, user_id: str, thread_id: str = None):
     agent = create_agent()
     config = {"configurable": {"thread_id": thread_id or f"thread_{datetime.now().timestamp()}"}}
 
-    result = agent.ainvoke({
+    result = await agent.ainvoke({
         "messages": [HumanMessage(content=query)],
         "user_id": user_id
     }, config)
