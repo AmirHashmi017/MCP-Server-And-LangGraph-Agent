@@ -19,9 +19,10 @@ from fastapi.security import HTTPAuthorizationCredentials
 
 from app.agentic_tools.agentic_tools import (
     direct_research_list, direct_chat_ask,
-    direct_summarize_research, direct_summarize_video,
+    direct_summarize_research,
+     direct_summarize_content, direct_summarize_video,
     direct_chat_history_list, direct_chat_history_get, direct_chat_history_delete,
-    direct_research_create,direct_research_update,direct_research_delete
+    direct_research_create,direct_research_update,direct_research_delete, direct_deep_answer
 )
 from fastapi import File, UploadFile
 
@@ -35,6 +36,8 @@ async def get_user_from_token(token: str):
 load_dotenv()
 
 VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://volvox-backend-integrated-production.up.railway.app/api/v1")
+
+SMART_API= os.getenv("SMART_API_URL", "https://volvox-backend-integrated-production.up.railway.app/api/v1")
 
 app = FastAPI(title="Unified MCP Server", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -184,7 +187,8 @@ TOOLS = [
                 "token": {"type": "string"},
                 "question": {"type": "string"},
                 "document_id": {"type": "string", "description": "Optional: specific document"},
-                "chat_id": {"type": "string", "description": "Optional: continue conversation"}
+                "chat_id": {"type": "string", "description": "Optional: continue conversation"},
+                "web_search": {"type": "boolean", "description": "Optional: Implement Web Search"}
             },
             "required": ["token", "question"]
         }
@@ -203,6 +207,18 @@ TOOLS = [
                 }
             },
             "required": ["token", "document_ids"]
+        }
+    },
+    {
+        "name": "volvox_summarize_content",
+        "description": "Generate AI summary of a large text content",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "token": {"type": "string"},
+                "content": {"type":"string"}
+            },
+            "required": ["token", "content"]
         }
     },
     {
@@ -250,6 +266,20 @@ TOOLS = [
                 "chat_id": {"type": "string"}
             },
             "required": ["token", "chat_id"]
+        }
+    },
+    {
+        "name": "smart_message_query",
+        "description": "Ask AI assistant a question about topic and it will search "
+        "from the knowledge base",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "token": {"type": "string"},
+                "question": {"type": "string"},
+                "mode": {"type": "string"}
+            },
+            "required": ["token", "question"]
         }
     },
 ]
@@ -352,12 +382,17 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 user_id=current_user.id,
                 question=arguments["question"],
                 document_id=arguments.get("document_id"),
-                chat_id=arguments.get("chat_id")
+                chat_id=arguments.get("chat_id"),
+                web_search=arguments.get("web_search")
                 )
                 return safe_return(result)
 
             elif tool_name == "volvox_summarize_research":
                 result = await direct_summarize_research(arguments["document_ids"])
+                return safe_return(result)
+            
+            elif tool_name == "volvox_summarize_content":
+                result = await direct_summarize_content(arguments["content"])
                 return safe_return(result)
 
             elif tool_name == "volvox_summarize_video":
@@ -403,9 +438,19 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                     research_id=arguments["research_id"]
                 )
                 return safe_return(result)
+            
+            elif tool_name == "smart_message_query":
+                result = await direct_deep_answer(
+                    question=arguments["question"],
+                    mode= arguments["mode"]
+                )
+                return safe_return(result)
 
             else:
                 return safe_return({"error": f"Unknown tool: {tool_name}"}, True)
+            
+            
+            
 
     except Exception as e:
         print(f"EXCEPTION in {tool_name}: {e}")

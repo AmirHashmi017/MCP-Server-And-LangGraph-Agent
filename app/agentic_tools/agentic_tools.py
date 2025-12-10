@@ -5,6 +5,8 @@ import os
 
 
 VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://volvox-backend-integrated-production.up.railway.app/api/v1")
+SMART_API = os.getenv("SMART_API_URL", "https://volvox-backend-integrated-production.up.railway.app/api/v1")
+
 DEFAULT_TIMEOUT = 300.0   
 
 async def direct_research_list(
@@ -31,11 +33,13 @@ async def direct_chat_ask(
     user_id: str,
     question: str,
     document_id: Optional[str] = None,
-    chat_id: Optional[str] = None
+    chat_id: Optional[str] = None,
+    web_search: Optional[bool]= False
 ) -> Dict[str, Any]:
     params = {"user_id":user_id, "question": question}
     if document_id: params["document_id"] = document_id
     if chat_id: params["chat_id"] = chat_id
+    if web_search: params["web_search"]= web_search
 
     async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
         r = await client.post(
@@ -50,6 +54,14 @@ async def direct_summarize_research(document_ids: List[str]) -> Dict[str, Any]:
         r = await client.post(
             f"{VOLVOX_API}/chat/summarize-research",
             json={"documents": document_ids}
+        )
+        return r.json() if r.status_code == 200 else {"error": r.text}
+
+async def direct_summarize_content(content: str) -> Dict[str, Any]:
+    async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
+        r = await client.post(
+            f"{VOLVOX_API}/chat/summarize-research-text",
+            json={"content": content}
         )
         return r.json() if r.status_code == 200 else {"error": r.text}
 
@@ -128,6 +140,17 @@ async def direct_research_delete(user_id: str, research_id: str) -> Dict[str, An
         r = await client.delete(
             f"{VOLVOX_API}/research/deleteResearch/{research_id}",
             params={"user_id": user_id}
+        )
+        return r.json() if r.status_code == 200 else {"error": r.text}
+    
+async def direct_deep_answer(question: str, mode:str) -> Dict[str, Any]:
+    async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
+        r = await client.post(
+            f"{SMART_API}/messageQuery",
+            json={"data": {
+                "message": question,
+                "mode": mode
+            }}
         )
         return r.json() if r.status_code == 200 else {"error": r.text}
  
