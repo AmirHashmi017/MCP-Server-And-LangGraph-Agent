@@ -1,4 +1,8 @@
-from app.agentic_workflows.langgraph_agent import run_agent
+from app.agentic_workflows.automated_competitor_market_intelligence_workflow import run_agent_market_intelligence
+from app.agentic_workflows.business_research_proposal_generation_workflow import run_agent_business_proposal
+from app.agentic_workflows.smart_research_and_summarization_workflow import run_agent_smart_search
+from app.agentic_workflows.topic_driven_research_qa_workflow import run_agent_smart_qa
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -22,9 +26,11 @@ from app.agentic_tools.agentic_tools import (
     direct_summarize_research,
      direct_summarize_content, direct_summarize_video,
     direct_chat_history_list, direct_chat_history_get, direct_chat_history_delete,
-    direct_research_create,direct_research_update,direct_research_delete, direct_deep_answer
+    direct_research_create,direct_research_update,direct_research_delete, direct_deep_answer,
+    direct_access_feasibility,direct_access_roadmap,direct_generate_proposal
 )
 from fastapi import File, UploadFile
+import base64
 
 async def get_user_from_token(token: str):
     if not token:
@@ -37,7 +43,11 @@ load_dotenv()
 
 VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://volvox-backend-integrated-production.up.railway.app/api/v1")
 
-SMART_API= os.getenv("SMART_API_URL", "https://volvox-backend-integrated-production.up.railway.app/api/v1")
+SMART_API= os.getenv("SMART_API_URL", "https://smart-research-answering-backend.up.railway.app")
+
+INNOSCOPE_API= os.getenv("INNOSCOPE_API_URL", "https://mustafanoor-innoscope-backend.hf.space")
+
+KICKSTART_API= os.getenv("KICKSTART_API_URL", "https://proposal-generation-for-funding-production.up.railway.app")
 
 app = FastAPI(title="Unified MCP Server", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -66,7 +76,7 @@ class MCPToolResult(BaseModel):
 
 TOOLS = [
     {
-        "name": "run_agent",
+        "name": "run_agent_smart_search",
         "description": "Run agent to achieve goal through agentic workflow",
         "inputSchema": {
             "type": "object",
@@ -78,7 +88,31 @@ TOOLS = [
         }
     },
     {
-        "name": "run_file_agent",
+        "name": "run_agent_market_intelligence",
+        "description": "Run agent to achieve goal through agentic workflow",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "token": {"type": "string"},
+                "query": {"type": "string", "description": "User Query to perform tasks"}
+            },
+            "required": ["token","query"]
+        }
+    },
+    {
+        "name": "run_agent_smart_qa",
+        "description": "Run agent to achieve goal through agentic workflow",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "token": {"type": "string"},
+                "query": {"type": "string", "description": "User Query to perform tasks"}
+            },
+            "required": ["token","query"]
+        }
+    },
+    {
+        "name": "run_agent_business_proposal",
         "description": "Run agent to achieve goal through agentic workflow",
         "inputSchema": {
             "type": "object",
@@ -89,6 +123,7 @@ TOOLS = [
             "required": ["token","researchName"]
         }
     },
+    
     {
         "name": "volvox_auth_signup",
         "description": "Signup to Volvox resulting in creation of user account",
@@ -282,6 +317,42 @@ TOOLS = [
             "required": ["token", "question"]
         }
     },
+    {
+    "name": "innoscope_generate_feasibility",
+    "description": "Generate feasibility output from a project summary",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "summary": {"type": "string"}
+        },
+        "required": ["token", "summary"]
+    }
+},
+{
+    "name": "innoscope_generate_roadmap",
+    "description": "Generate a roadmap from a project summary",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "summary": {"type": "string"}
+        },
+        "required": ["token", "summary"]
+    }
+},
+{
+    "name": "kickstart_generate_proposal_from_text",
+    "description": "Generate a funding proposal PDF from a feasibility report text",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "report_text": {"type": "string"}
+        },
+        "required": ["token", "report_text"]
+    }
+}
 ]
 
 def log_tool(tool_name: str, args: dict, url: str, method: str = "POST"):
@@ -334,12 +405,27 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
             except HTTPException as e:
                 return safe_return({"error": e.detail}, True)
 
-            if tool_name== "run_agent":
+            if tool_name== "run_agent_market_intelligence":
                 query= arguments["query"]
-                resp= await run_agent(query,user_id=str(current_user.id))
-                return safe_return(resp)
+                fnal_query=f"""
+                    You are an expert market intelligence analyst. Follow these steps EXACTLY in this order:
+
+                    1. Call the tool `smart_deep_search` with the original user query (mode="deep").
+                    2. Take the full search result and call `volvox_summarize_content` on it to create a concise summary.
+                    3. Take that same summary and call `generate_feasibility`.
+                    4. Take the same summary again and call `generate_roadmap`.
+                    5. Combine the full feasibility text + roadmap text into one single string.
+                    6. Call `generate_proposal_from_text` with that combined string.
+                    7. Finally, respond with something like: "Here is your complete market intelligence report with feasibility, roadmap and funding proposal (PDF attached)."
+
+                    Never skip steps and never answer before the PDF is generated.
+                    Original user query: {query}
+                """
+                pdf_bytes= await run_agent_market_intelligence(fnal_query,user_id=str(current_user.id))
+                pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                return safe_return({"pdf_base64": pdf_b64})
             
-            if tool_name== "run_file_agent":
+            elif tool_name== "run_agent_business_proposal":
                 file = arguments.get("uploaded_file")
                 if not file:
                     return safe_return({"error": "File is required for research creation"}, True)
@@ -354,8 +440,31 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 else:
                     return safe_return({"error": "Failed to create research – no ID returned"}, True)
                 
-                query= f"Summarize the content of the Research having ResearchID={research_id}"
-                resp= await run_agent(query,user_id=str(current_user.id))
+                query= f"""Summarize the content of the Research having ResearchID={research_id}
+                and then use that summary to generate Roadmap and use same summary to generate
+                feasibility analysis and then combine both roadmap and fesibility and give it 
+                to propsal generator for generating proposal"""
+                pdf_bytes= await run_agent_business_proposal(query,user_id=str(current_user.id))
+                pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                return safe_return({"pdf_base64": pdf_b64})
+
+            elif tool_name== "run_agent_smart_search":
+                query= arguments["query"]
+                fnal_query=f"""
+                    Based on the query {query} user has provided, perform smart deep search on it,
+                    then summarize the result of deep search.
+                """
+                resp= await run_agent_smart_search(fnal_query,user_id=str(current_user.id))
+                return safe_return(resp)
+
+            elif tool_name== "run_agent_smart_qa":
+                query= arguments["query"]
+                fnal_query=f"""
+                    Based on the query {query} user has provided, perform smart deep search on it,
+                    then give the result of that to volvox chat ask means chatbot and 
+                    ask it to remember that context
+                """
+                resp= await run_agent_smart_qa(fnal_query,user_id=str(current_user.id))
                 return safe_return(resp)
 
             elif tool_name == "volvox_auth_get_user":
@@ -445,6 +554,25 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                     mode= arguments["mode"]
                 )
                 return safe_return(result)
+            elif tool_name == "innoscope_generate_feasibility":
+                result = await direct_access_feasibility(
+                    summary=arguments.get("summary", "")
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_generate_roadmap":
+                result = await direct_access_roadmap(
+                    summary=arguments.get("summary", "")
+                )
+                return safe_return(result)
+
+            elif tool_name == "kickstart_generate_proposal_from_text":
+                pdf_bytes = await direct_generate_proposal(
+                report_text=arguments.get("report_text", "")
+                )
+                pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                return safe_return({"pdf_base64": pdf_b64})
+
 
             else:
                 return safe_return({"error": f"Unknown tool: {tool_name}"}, True)

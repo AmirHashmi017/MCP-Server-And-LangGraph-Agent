@@ -10,9 +10,6 @@ from datetime import datetime
 import json
 
 from app.agentic_tools.agentic_tools import (
-    direct_research_list, direct_chat_ask,
-    direct_summarize_research, direct_summarize_video,
-    direct_chat_history_list, direct_chat_history_get, direct_chat_history_delete, 
     direct_deep_answer, direct_summarize_content
 )
 
@@ -23,59 +20,29 @@ class AgentState(TypedDict):
 
 
 @tool
-async def volvox_search_documents(
-    user_id: str,
-    limit: int = 20,
-    offset: int = 0,
-    search: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None
-):
-    """List user's research documents"""
-    return await direct_research_list(user_id, limit, offset, search, start_date, end_date)
-
-@tool
-async def volvox_ask_document(user_id: str, question: str, document_id: str = "", chat_id: str = "", 
-                              web_search: bool= False):
-    """Ask a question about documents or content using RAG, also aware of the chat history using 
-    specific chat_id for a chat search and also enable web_search"""
-    return await direct_chat_ask(user_id, question, document_id, chat_id, web_search)
-
-@tool
-async def volvox_summarize_documents(document_ids: list[str]):
-    """Summarize multiple research documents"""
-    return await direct_summarize_research(document_ids)
-
-@tool
 async def volvox_summarize_content(content: str):
     """Summarize long Content Text"""
     return await direct_summarize_content(content)
 
-@tool
-async def volvox_summarize_video(video_url: str):
-    """Summarize a YouTube video"""
-    return await direct_summarize_video(video_url)
-
-@tool
-async def volvox_chat_history_list(user_id: str):
-    """List all chat conversations for the user"""
-    return await direct_chat_history_list (user_id)
-
-@tool
-async def volvox_chat_history_get(user_id: str, chat_id: str):
-    """Get full chat history"""
-    return await direct_chat_history_get(user_id, chat_id)
-
-@tool
-async def volvox_delete_chat_history(user_id: str, chat_id: str) -> str:
-    """Delete a chat"""
-    return await direct_chat_history_delete(user_id, chat_id)
 
 @tool
 async def smart_deep_search(question: str, mode: str = "deep") -> str:
     """"Ask AI assistant a question about topic and it will search
         from the knowledge base"""
     return await direct_deep_answer(question,mode)
+
+    """
+    Generates a funding proposal PDF from a feasibility report text.
+    
+    Args:
+        report_text (str): The feasibility report content.
+    
+    Returns:
+        bytes: PDF file content as bytes.
+    """
+    return await direct_generate_proposal(report_text)
+
+
 
 
 SYSTEM_PROMPT = """You are Volvox AI — an expert research assistant.
@@ -85,14 +52,7 @@ The user_id is already known and automatically passed to all tools — NEVER ask
 
 Your available tools:
 • smart_deep_search — Ask AI assistant a question about topic and it will search from the knowledge base
-• volvox_search_documents — list and search research papers
-• volvox_ask_document — Ask a question about documents or content using RAG, also aware of the chat history using specific chat_id for a chat search and also enable web_search
-• volvox_summarize_documents — summarize multiple papers
 • volvox_summarize_content — Summarize long Content Text
-• volvox_summarize_video — summarize YouTube videos
-• volvox_chat_history_list — show past conversations
-• volvox_chat_history_get — retrieve a full chat
-• volvox_delete_chat_history — delete a chat
 
 RULES:
 - Always use tools when the user wants to see, search, or ask about their documents
@@ -119,14 +79,7 @@ def call_model(state: AgentState):
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 
     llm_with_tools = llm.bind_tools([
-        volvox_search_documents,
-        volvox_ask_document,
-        volvox_summarize_documents,
         volvox_summarize_content,
-        volvox_summarize_video,
-        volvox_chat_history_list,
-        volvox_chat_history_get,
-        volvox_delete_chat_history,
         smart_deep_search
     ])
 
@@ -153,14 +106,7 @@ def create_agent():
             args["user_id"] = user_id  
 
             tool_map = {
-                "volvox_search_documents": volvox_search_documents,
-                "volvox_ask_document": volvox_ask_document,
-                "volvox_summarize_documents": volvox_summarize_documents,
                 "volvox_summarize_content": volvox_summarize_content,
-                "volvox_summarize_video": volvox_summarize_video,
-                "volvox_chat_history_list": volvox_chat_history_list,
-                "volvox_chat_history_get": volvox_chat_history_get,
-                "volvox_delete_chat_history": volvox_delete_chat_history,
                 "smart_deep_search": smart_deep_search,
             }
 
@@ -190,7 +136,7 @@ def create_agent():
 
     return workflow.compile(checkpointer=MemorySaver())
 
-async def run_agent(query: str, user_id: str, thread_id: str = None):
+async def run_agent_smart_search(query: str, user_id: str, thread_id: str = None):
     agent = create_agent()
     config = {"configurable": {"thread_id": thread_id or f"thread_{datetime.now().timestamp()}"}}
 
