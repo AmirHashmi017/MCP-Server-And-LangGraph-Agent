@@ -440,7 +440,10 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 else:
                     return safe_return({"error": "Failed to create research – no ID returned"}, True)
                 
-                query= f"""Generate Business Proposal on Topic need of IT in Pakistan Local Market"""
+                query= f"""Summarize the content of the Research having ResearchID={research_id}
+                and then use that summary to generate Roadmap and use same summary to generate
+                feasibility analysis and then combine both roadmap and fesibility and give it 
+                to proposal generator for generating proposal"""
                 pdf_bytes= await run_agent_business_proposal(query,user_id=str(current_user.id))
                 pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
                 return safe_return({"pdf_base64": pdf_b64})
