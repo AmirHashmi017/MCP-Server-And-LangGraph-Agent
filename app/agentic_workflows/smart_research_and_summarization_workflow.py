@@ -9,6 +9,7 @@ import operator
 from datetime import datetime
 import json
 from fastapi import WebSocket
+from langchain_core.runnables import RunnableConfig
 
 from app.agentic_tools.agentic_tools import (
     direct_deep_answer, direct_summarize_content
@@ -92,7 +93,7 @@ def call_model(state: AgentState):
 def create_agent():
     """Build the LangGraph agent with FULL async support"""
 
-    async def execute_tools(state: AgentState, config: dict):
+    async def execute_tools(state: AgentState, config: RunnableConfig)-> dict:
         user_id = state["user_id"]
         tool_calls = state["messages"][-1].tool_calls
         results = []
