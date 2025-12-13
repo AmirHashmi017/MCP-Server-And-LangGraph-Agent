@@ -1,9 +1,9 @@
-from app.agentic_workflows.automated_competitor_market_intelligence_workflow import run_agent_market_intelligence
-from app.agentic_workflows.business_research_proposal_generation_workflow import run_agent_business_proposal
-from app.agentic_workflows.smart_research_and_summarization_workflow import run_agent_smart_search
-from app.agentic_workflows.topic_driven_research_qa_workflow import run_agent_smart_qa
+from app.agentic_workflows.automated_competitor_market_intelligence_workflow import run_agent_market_intelligence, set_send_stream_update as set_stream_market
+from app.agentic_workflows.business_research_proposal_generation_workflow import run_agent_business_proposal, set_send_stream_update as set_stream_business
+from app.agentic_workflows.smart_research_and_summarization_workflow import run_agent_smart_search, set_send_stream_update as set_stream_smart
+from app.agentic_workflows.topic_driven_research_qa_workflow import run_agent_smart_qa, set_send_stream_update as set_stream_qa
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -52,9 +52,25 @@ KICKSTART_API= os.getenv("KICKSTART_API_URL", "https://proposal-generation-for-f
 app = FastAPI(title="Unified MCP Server", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
+# Global dict to store active WebSocket connections for streaming updates
+active_streams: Dict[str, WebSocket] = {}
+
+async def send_stream_update(thread_id: str, data: dict):
+    """Send a real-time update to the WebSocket client for a specific thread."""
+    if ws := active_streams.get(thread_id):
+        try:
+            await ws.send_json({**data, "timestamp": datetime.now().isoformat()})
+        except Exception:
+            pass  # Connection may have closed; silently ignore
+
 @app.on_event("startup")
 async def startup_event():
     await connect_to_mongo()
+    # Initialize stream update functions in all workflow modules
+    set_stream_market(send_stream_update)
+    set_stream_business(send_stream_update)
+    set_stream_smart(send_stream_update)
+    set_stream_qa(send_stream_update)
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -355,6 +371,38 @@ TOOLS = [
 }
 ]
 
+@app.websocket("/ws/agent-stream")
+async def websocket_agent_stream(websocket: WebSocket):
+    """
+    WebSocket endpoint for streaming live agent execution updates.
+    Query params:
+        - thread_id (required): Unique identifier for the agent execution thread
+        - user_id (optional): User ID for logging
+    """
+    thread_id = websocket.query_params.get("thread_id")
+    if not thread_id:
+        await websocket.close(code=1008, reason="Missing thread_id query parameter")
+        return
+    
+    await websocket.accept()
+    active_streams[thread_id] = websocket
+    
+    try:
+        await websocket.send_json({
+            "type": "connected",
+            "thread_id": thread_id,
+            "message": "Connected to agent stream",
+            "timestamp": datetime.now().isoformat()
+        })
+        
+
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        active_streams.pop(thread_id, None)
+
 def log_tool(tool_name: str, args: dict, url: str, method: str = "POST"):
     print("\n" + "═" * 100)
     print(f"TOOL → {tool_name.upper()} @ {datetime.now().isoformat()}")
@@ -407,6 +455,7 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
 
             if tool_name== "run_agent_market_intelligence":
                 query= arguments["query"]
+                thread_id = f"market_intelligence_{datetime.now().timestamp()}_{str(current_user.id)}"
                 fnal_query=f"""
                     You are an expert market intelligence analyst. Follow these steps EXACTLY in this order:
 
@@ -421,9 +470,16 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                     Never skip steps and never answer before the PDF is generated.
                     Original user query: {query}
                 """
-                pdf_bytes= await run_agent_market_intelligence(fnal_query,user_id=str(current_user.id))
-                pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
-                return safe_return({"pdf_base64": pdf_b64})
+                
+                import asyncio
+                asyncio.create_task(
+                    run_agent_market_intelligence(fnal_query, user_id=str(current_user.id), thread_id=thread_id)
+                )
+                return safe_return({
+                    "status": "started",
+                    "thread_id": thread_id,
+                    "message": "Market intelligence analysis started. Live progress and final PDF will be streamed."
+                })
             
             elif tool_name== "run_agent_business_proposal":
                 file = arguments.get("uploaded_file")
@@ -440,32 +496,52 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 else:
                     return safe_return({"error": "Failed to create research – no ID returned"}, True)
                 
-                query= f"""Summarize the content of the Research having ResearchID={research_id}
-                and then use that summary to generate Roadmap and use same summary to generate
-                feasibility analysis and then combine both roadmap and fesibility and give it 
-                to proposal generator for generating proposal"""
-                pdf_bytes= await run_agent_business_proposal(query,user_id=str(current_user.id))
-                pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
-                return safe_return({"pdf_base64": pdf_b64})
+                thread_id = f"business_proposal_{datetime.now().timestamp()}_{str(current_user.id)}"
+                query= f"""Generate Business proposal on topic The ned of IT in Local Markets"""
+                import asyncio
+                asyncio.create_task(
+                    run_agent_business_proposal(query, user_id=str(current_user.id), thread_id=thread_id)
+                )
+                return safe_return({
+                    "status": "started",
+                    "thread_id": thread_id,
+                    "message": "Business proposal generation started. Live progress and final PDF will be streamed."
+                })
 
             elif tool_name== "run_agent_smart_search":
                 query= arguments["query"]
+                thread_id = f"smart_search_{datetime.now().timestamp()}_{str(current_user.id)}"
                 fnal_query=f"""
                     Based on the query {query} user has provided, perform smart deep search on it,
                     then summarize the result of deep search.
                 """
-                resp= await run_agent_smart_search(fnal_query,user_id=str(current_user.id))
-                return safe_return(resp)
+                import asyncio
+                asyncio.create_task(
+                    run_agent_smart_search(fnal_query, user_id=str(current_user.id), thread_id=thread_id)
+                )
+                return safe_return({
+                    "status": "started",
+                    "thread_id": thread_id,
+                    "message": "Smart search analysis started. Live progress and final response will be streamed."
+                })
 
             elif tool_name== "run_agent_smart_qa":
                 query= arguments["query"]
+                thread_id = f"smart_qa_{datetime.now().timestamp()}_{str(current_user.id)}"
                 fnal_query=f"""
                     Based on the query {query} user has provided, perform smart deep search on it,
                     then give the result of that to volvox chat ask means chatbot and 
                     ask it to remember that context
                 """
-                resp= await run_agent_smart_qa(fnal_query,user_id=str(current_user.id))
-                return safe_return(resp)
+                import asyncio
+                asyncio.create_task(
+                    run_agent_smart_qa(fnal_query, user_id=str(current_user.id), thread_id=thread_id)
+                )
+                return safe_return({
+                    "status": "started",
+                    "thread_id": thread_id,
+                    "message": "Q&A analysis started. Live progress and final response will be streamed."
+                })
 
             elif tool_name == "volvox_auth_get_user":
                 return UserResponse(

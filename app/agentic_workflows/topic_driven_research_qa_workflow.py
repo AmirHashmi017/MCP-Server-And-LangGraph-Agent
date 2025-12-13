@@ -9,6 +9,13 @@ import operator
 from datetime import datetime
 import json
 
+# Placeholder for send_stream_update; will be set by mcp_server at runtime
+_send_stream_update = None
+
+def set_send_stream_update(func):
+    global _send_stream_update
+    _send_stream_update = func
+
 from app.agentic_tools.agentic_tools import (
     direct_research_list, direct_chat_ask,
     direct_summarize_research, direct_summarize_video,
@@ -149,6 +156,9 @@ def create_agent():
         tool_calls = state["messages"][-1].tool_calls
         results = []
 
+        # Extract thread_id from config for stream updates
+        thread_id = state.get("config", {}).get("configurable", {}).get("thread_id")
+
         for tool_call in tool_calls:
             tool_name = tool_call["name"]
             args = tool_call["args"].copy()
@@ -171,9 +181,32 @@ def create_agent():
                 result = {"error": f"Unknown tool: {tool_name}"}
             else:
                 try:
+                    # Send stream update for tool start
+                    if thread_id and _send_stream_update:
+                        await _send_stream_update(thread_id, {
+                            "type": "tool_start",
+                            "tool_name": tool_name,
+                            "input": args
+                        })
+                    
                     result = await tool_func.ainvoke(args) 
+                    
+                    # Send stream update for tool end
+                    if thread_id and _send_stream_update:
+                        await _send_stream_update(thread_id, {
+                            "type": "tool_end",
+                            "tool_name": tool_name,
+                            "response": result
+                        })
                 except Exception as e:
                     result = {"error": str(e)}
+                    # Send stream update for tool error
+                    if thread_id and _send_stream_update:
+                        await _send_stream_update(thread_id, {
+                            "type": "tool_error",
+                            "tool_name": tool_name,
+                            "error": str(e)
+                        })
 
             results.append(ToolMessage(
                 content=json.dumps(result, indent=2),
@@ -194,7 +227,8 @@ def create_agent():
 
 async def run_agent_smart_qa(query: str, user_id: str, thread_id: str = None):
     agent = create_agent()
-    config = {"configurable": {"thread_id": thread_id or f"thread_{datetime.now().timestamp()}"}}
+    thread_id = thread_id or f"thread_{datetime.now().timestamp()}"
+    config = {"configurable": {"thread_id": thread_id}}
 
     result = await agent.ainvoke({
         "messages": [HumanMessage(content=query)],
@@ -204,8 +238,17 @@ async def run_agent_smart_qa(query: str, user_id: str, thread_id: str = None):
     final_msg = result["messages"][-1]
     response_text = final_msg.content if hasattr(final_msg, "content") else str(final_msg)
 
-    return {
+    final_result = {
         "response": response_text,
-        "thread_id": config["configurable"]["thread_id"],
+        "thread_id": thread_id,
         "tool_calls_count": len([m for m in result["messages"] if hasattr(m, "tool_calls") and m.tool_calls])
     }
+    
+    # Stream final result through WebSocket
+    if thread_id and _send_stream_update:
+        await _send_stream_update(thread_id, {
+            "type": "workflow_complete",
+            "result": final_result
+        })
+    
+    return final_result

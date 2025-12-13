@@ -9,6 +9,13 @@ import operator
 from datetime import datetime
 import json
 
+# Placeholder for send_stream_update; will be set by mcp_server at runtime
+_send_stream_update = None
+
+def set_send_stream_update(func):
+    global _send_stream_update
+    _send_stream_update = func
+
 from app.agentic_tools.agentic_tools import ( 
     direct_deep_answer, direct_summarize_content, direct_access_feasibility, direct_access_roadmap,
     direct_generate_proposal
@@ -136,6 +143,9 @@ def create_agent():
         tool_calls = state["messages"][-1].tool_calls
         results = []
 
+        # Extract thread_id from config for stream updates
+        thread_id = state.get("config", {}).get("configurable", {}).get("thread_id")
+
         for tool_call in tool_calls:
             tool_name = tool_call["name"]
             args = tool_call["args"].copy()
@@ -154,9 +164,32 @@ def create_agent():
                 result = {"error": f"Unknown tool: {tool_name}"}
             else:
                 try:
+                    # Send stream update for tool start
+                    if thread_id and _send_stream_update:
+                        await _send_stream_update(thread_id, {
+                            "type": "tool_start",
+                            "tool_name": tool_name,
+                            "input": args
+                        })
+                    
                     result = await tool_func.ainvoke(args) 
+                    
+                    # Send stream update for tool end
+                    if thread_id and _send_stream_update:
+                        await _send_stream_update(thread_id, {
+                            "type": "tool_end",
+                            "tool_name": tool_name,
+                            "response": result
+                        })
                 except Exception as e:
                     result = {"error": str(e)}
+                    # Send stream update for tool error
+                    if thread_id and _send_stream_update:
+                        await _send_stream_update(thread_id, {
+                            "type": "tool_error",
+                            "tool_name": tool_name,
+                            "error": str(e)
+                        })
 
             if isinstance(result, bytes):
                 import base64
@@ -185,7 +218,8 @@ def create_agent():
 
 async def run_agent_market_intelligence(query: str, user_id: str, thread_id: str = None):
     agent = create_agent()
-    config = {"configurable": {"thread_id": thread_id or f"thread_{datetime.now().timestamp()}"}}
+    thread_id = thread_id or f"thread_{datetime.now().timestamp()}"
+    config = {"configurable": {"thread_id": thread_id}}
 
     result = await agent.ainvoke({
         "messages": [HumanMessage(content=query)],
@@ -194,15 +228,33 @@ async def run_agent_market_intelligence(query: str, user_id: str, thread_id: str
 
     import base64
 
-   
+    pdf_bytes = None
     for msg in reversed(result["messages"]):
         if isinstance(msg, ToolMessage):
             if (hasattr(msg, "additional_kwargs") and 
                 msg.additional_kwargs.get("raw_binary") and
                 msg.additional_kwargs.get("tool_name") == "generate_proposal_from_text"):
-                return base64.b64decode(msg.content)
+                pdf_bytes = base64.b64decode(msg.content)
+                break
 
             if isinstance(msg.content, bytes):
-                return msg.content
+                pdf_bytes = msg.content
+                break
 
-    raise ValueError("No PDF bytes found in agent result.")
+    if not pdf_bytes:
+        raise ValueError("No PDF bytes found in agent result.")
+    
+    # Stream final result through WebSocket
+    if thread_id and _send_stream_update:
+        pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+        await _send_stream_update(thread_id, {
+            "type": "workflow_complete",
+            "result": {
+                "status": "success",
+                "message": "Market intelligence report generated",
+                "pdf_base64": pdf_b64,
+                "thread_id": thread_id
+            }
+        })
+    
+    return pdf_bytes
