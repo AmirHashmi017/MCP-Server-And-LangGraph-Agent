@@ -168,10 +168,11 @@ def create_agent():
                     result = {"error": str(e)}
 
             if isinstance(result, bytes):
+                import base64
                 results.append(ToolMessage(
-                    content=result,
+                    content=base64.b64encode(result).decode('utf-8'),
                     tool_call_id=tool_call["id"],
-                    additional_kwargs={"raw_binary": True} 
+                    additional_kwargs={"raw_binary": True, "tool_name": tool_name}
                 ))
             else:
                 results.append(ToolMessage(
@@ -200,16 +201,17 @@ async def run_agent_business_proposal(query: str, user_id: str, thread_id: str =
         "user_id": user_id
     }, config)
 
-    for msg in reversed(result["messages"]):
-        if isinstance(msg, ToolMessage) and "generate_proposal_from_text" in msg.content:
-            try:
-                data = json.loads(msg.content)
-                if isinstance(data, dict) and "result" in data:
-                    return data["result"]  
-                elif isinstance(data, bytes):
-                    return data
-            except:
-                pass
+    import base64
 
-        if hasattr(msg, "content") and isinstance(msg.content, bytes):
-            return msg.content
+   
+    for msg in reversed(result["messages"]):
+        if isinstance(msg, ToolMessage):
+            if (hasattr(msg, "additional_kwargs") and 
+                msg.additional_kwargs.get("raw_binary") and
+                msg.additional_kwargs.get("tool_name") == "generate_proposal_from_text"):
+                return base64.b64decode(msg.content)
+
+            if isinstance(msg.content, bytes):
+                return msg.content
+
+    raise ValueError("No PDF bytes found in agent result.")
