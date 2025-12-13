@@ -38,16 +38,6 @@ async def smart_deep_search(question: str, mode: str = "deep") -> str:
         from the knowledge base"""
     return await direct_deep_answer(question,mode)
 
-    """
-    Generates a funding proposal PDF from a feasibility report text.
-    
-    Args:
-        report_text (str): The feasibility report content.
-    
-    Returns:
-        bytes: PDF file content as bytes.
-    """
-    return await direct_generate_proposal(report_text)
 
 
 
