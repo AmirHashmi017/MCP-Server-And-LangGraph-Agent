@@ -14,7 +14,6 @@ from app.agentic_tools.agentic_tools import (
     direct_deep_answer, direct_summarize_content
 )
 
-# Placeholder for send_stream_update; will be set by mcp_server at runtime
 _send_stream_update = None
 
 def set_send_stream_update(func):
@@ -128,7 +127,7 @@ def create_agent():
                 result = {"error": f"Unknown tool: {tool_name}"}
             else:
                 try:
-                    # Send stream update for tool start
+                    
                     if thread_id and _send_stream_update:
                         print(f"[DEBUG] Sending tool_start for {tool_name}")
                         await _send_stream_update(thread_id, {
@@ -139,7 +138,7 @@ def create_agent():
                     
                     result = await tool_func.ainvoke(args) 
                     
-                    # Send stream update for tool end
+                   
                     if thread_id and _send_stream_update:
                         await _send_stream_update(thread_id, {
                             "type": "tool_end",
@@ -148,7 +147,7 @@ def create_agent():
                         })
                 except Exception as e:
                     result = {"error": str(e)}
-                    # Send stream update for tool error
+                    
                     if thread_id and _send_stream_update:
                         await _send_stream_update(thread_id, {
                             "type": "tool_error",

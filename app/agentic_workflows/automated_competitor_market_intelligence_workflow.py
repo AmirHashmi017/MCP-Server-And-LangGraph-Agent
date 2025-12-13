@@ -9,7 +9,6 @@ import operator
 from datetime import datetime
 import json
 
-# Placeholder for send_stream_update; will be set by mcp_server at runtime
 _send_stream_update = None
 
 def set_send_stream_update(func):
@@ -138,13 +137,16 @@ def call_model(state: AgentState):
 def create_agent():
     """Build the LangGraph agent with FULL async support"""
 
-    async def execute_tools(state: AgentState):
+    async def execute_tools(state: AgentState,config:dict):
         user_id = state["user_id"]
         tool_calls = state["messages"][-1].tool_calls
         results = []
 
-        # Extract thread_id from config for stream updates
-        thread_id = state.get("config", {}).get("configurable", {}).get("thread_id")
+        
+        configurable = config.get("configurable", {})
+        thread_id = configurable.get("thread_id")
+        print(f"[DEBUG] thread_id: {thread_id}")
+        print(f"[DEBUG] _send_stream_update is set: {_send_stream_update is not None}")
 
         for tool_call in tool_calls:
             tool_name = tool_call["name"]
@@ -164,8 +166,9 @@ def create_agent():
                 result = {"error": f"Unknown tool: {tool_name}"}
             else:
                 try:
-                    # Send stream update for tool start
+                   
                     if thread_id and _send_stream_update:
+                        print(f"[DEBUG] Sending tool_start for {tool_name}")
                         await _send_stream_update(thread_id, {
                             "type": "tool_start",
                             "tool_name": tool_name,
@@ -174,7 +177,6 @@ def create_agent():
                     
                     result = await tool_func.ainvoke(args) 
                     
-                    # Send stream update for tool end
                     if thread_id and _send_stream_update:
                         await _send_stream_update(thread_id, {
                             "type": "tool_end",
@@ -183,7 +185,6 @@ def create_agent():
                         })
                 except Exception as e:
                     result = {"error": str(e)}
-                    # Send stream update for tool error
                     if thread_id and _send_stream_update:
                         await _send_stream_update(thread_id, {
                             "type": "tool_error",
