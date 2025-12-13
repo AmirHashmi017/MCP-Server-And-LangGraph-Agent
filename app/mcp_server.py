@@ -497,7 +497,10 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                     return safe_return({"error": "Failed to create research – no ID returned"}, True)
                 
                 thread_id = f"business_proposal_{datetime.now().timestamp()}_{str(current_user.id)}"
-                query= f"""Generate Business proposal on topic The ned of IT in Local Markets"""
+                query= f"""Summarize the content of the Research having ResearchID={research_id}
+                and then use that summary to generate Roadmap and use same summary to generate
+                feasibility analysis and then combine both roadmap and fesibility and give it 
+                to proposal generator for generating proposal"""
                 import asyncio
                 asyncio.create_task(
                     run_agent_business_proposal(query, user_id=str(current_user.id), thread_id=thread_id)
