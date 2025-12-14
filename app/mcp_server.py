@@ -465,7 +465,7 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                     4. Take the same summary again and call `generate_roadmap`.
                     5. Combine the full feasibility text + roadmap text into one single string.
                     6. Call `generate_proposal_from_text` with that combined string.
-                    7. Finally, respond with something like: "Here is your complete market intelligence report with feasibility, roadmap and funding proposal (PDF attached)."
+                    7. Finally, respond with the result og function generate_proposal_from_text"
 
                     Never skip steps and never answer before the PDF is generated.
                     Original user query: {query}
@@ -500,7 +500,7 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 query= f"""Summarize the content of the Research having ResearchID={research_id}
                 and then use that summary to generate Roadmap and use same summary to generate
                 feasibility analysis and then combine both roadmap and fesibility and give it 
-                to proposal generator for generating proposal"""
+                to proposal generator for generating proposal and return it's response"""
                 import asyncio
                 asyncio.create_task(
                     run_agent_business_proposal(query, user_id=str(current_user.id), thread_id=thread_id)
