@@ -52,7 +52,6 @@ KICKSTART_API= os.getenv("KICKSTART_API_URL", "https://proposal-generation-for-f
 app = FastAPI(title="Unified MCP Server", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-# Global dict to store active WebSocket connections for streaming updates
 active_streams: Dict[str, WebSocket] = {}
 
 async def send_stream_update(thread_id: str, data: dict):
@@ -66,7 +65,6 @@ async def send_stream_update(thread_id: str, data: dict):
 @app.on_event("startup")
 async def startup_event():
     await connect_to_mongo()
-    # Initialize stream update functions in all workflow modules
     set_stream_market(send_stream_update)
     set_stream_business(send_stream_update)
     set_stream_smart(send_stream_update)
