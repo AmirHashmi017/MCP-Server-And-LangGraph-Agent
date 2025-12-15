@@ -4,7 +4,7 @@ from fastapi import UploadFile
 import os
 
 
-VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://volvox-backend.onrender.com/api/v1")
+VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://volvox-backend-integrated-production.up.railway.app/api/v1")
 SMART_API = os.getenv("SMART_API_URL", "https://smart-research-answering-backend.up.railway.app")
 INNOSCOPE_API= os.getenv("INNOSCOPE_API_URL", "https://mustafanoor-innoscope-backend.hf.space")
 KICKSTART_API= os.getenv("KICKSTART_API_URL", "https://proposal-generation-for-funding-production.up.railway.app")
