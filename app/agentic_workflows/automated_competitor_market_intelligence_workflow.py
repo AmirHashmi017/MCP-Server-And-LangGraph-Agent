@@ -116,7 +116,7 @@ def call_model(state: AgentState):
     if not any(isinstance(m, SystemMessage) for m in messages):
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
 
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite", temperature=0)
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 
     llm_with_tools = llm.bind_tools([
         volvox_summarize_content,
