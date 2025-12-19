@@ -14,7 +14,7 @@ async def smart_new_chat(user_id: str) -> Dict[str, Any]:
         return r.json() if r.status_code == 200 else {"error": r.text}
 
 async def smart_send_message(
-    session_id: str,
+    session_id: int,
     message: str,
     user_id: str,
     mode: str = "simple"

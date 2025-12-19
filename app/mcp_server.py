@@ -400,7 +400,7 @@ TOOLS = [
         "type": "object",
         "properties": {
             "token": {"type": "string"},
-            "session_id": {"type": "string", "description": "Chat session ID"},
+            "session_id": {"type": "number", "description": "Chat session ID"},
             "message": {"type": "string", "description": "Message to send"},
             "mode": {"type": "string", "description": "Chat mode (simple/deep)", "default": "simple"}
         },
