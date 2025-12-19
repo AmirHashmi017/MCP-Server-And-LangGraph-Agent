@@ -1,0 +1,291 @@
+{
+  "smart_search_endpoints": {
+    "smart_new_chat": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "smart_new_chat",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "user_id": "68fdb2a5d8f7dbad4acd8099"
+        }
+      },
+      "id": 1
+    },
+    "smart_send_message": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "smart_send_message",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "session_id": "12345",
+          "message": "What is artificial intelligence?",
+          "user_id": "68fdb2a5d8f7dbad4acd8099",
+          "mode": "deep"
+        }
+      },
+      "id": 2
+    },
+    "smart_deep_search": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "smart_deep_search",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "message": "Explain machine learning algorithms",
+          "mode": "deep"
+        }
+      },
+      "id": 3
+    },
+    "smart_get_chat_history": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "smart_get_chat_history",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "session_id": 12345
+        }
+      },
+      "id": 4
+    },
+    "smart_get_history_titles": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "smart_get_history_titles",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "user_id": "68fdb2a5d8f7dbad4acd8099"
+        }
+      },
+      "id": 5
+    }
+  },
+  "innoscope_chat_endpoints": {
+    "innoscope_send_chat_message": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "innoscope_send_chat_message",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "user_id": 123,
+          "message": "I want to build a mobile app for food delivery",
+          "session_id": "session_456"
+        }
+      },
+      "id": 6
+    },
+    "innoscope_get_chat_sessions": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "innoscope_get_chat_sessions",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "user_id": 123
+        }
+      },
+      "id": 7
+    },
+    "innoscope_get_session_messages": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "innoscope_get_session_messages",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "session_id": 456,
+          "user_id": 123
+        }
+      },
+      "id": 8
+    }
+  },
+  "innoscope_feasibility_endpoints": {
+    "innoscope_assess_feasibility_from_chat": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "innoscope_assess_feasibility_from_chat",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "session_id": 456
+        }
+      },
+      "id": 9
+    },
+    "generate_feasibility": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "generate_feasibility",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "summary": "A mobile application for food delivery that connects restaurants with customers. The app will feature real-time tracking, payment integration, and user reviews. Target market is urban areas with high smartphone penetration."
+        }
+      },
+      "id": 10
+    }
+  },
+  "innoscope_roadmap_endpoints": {
+    "innoscope_generate_roadmap_from_chat": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "innoscope_generate_roadmap_from_chat",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "session_id": 456
+        }
+      },
+      "id": 11
+    },
+    "generate_roadmap": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "generate_roadmap",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "summary": "A mobile application for food delivery that connects restaurants with customers. The app will feature real-time tracking, payment integration, and user reviews. Target market is urban areas with high smartphone penetration."
+        }
+      },
+      "id": 12
+    }
+  },
+  "innoscope_summarization_endpoints": {
+    "innoscope_summarize_text": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "innoscope_summarize_text",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "text": "Artificial intelligence (AI) is a branch of computer science that aims to create intelligent machines that work and react like humans. Some of the activities computers with artificial intelligence are designed for include: Speech recognition, Learning, Planning, Problem solving. AI research has been highly successful in developing effective techniques for solving a wide range of problems, from game playing to medical diagnosis."
+        }
+      },
+      "id": 13
+    }
+  },
+  "file_upload_endpoints_note": {
+    "note": "For file upload endpoints, you need to use multipart/form-data in Postman:",
+    "endpoints_requiring_files": [
+      "innoscope_assess_feasibility_from_file",
+      "innoscope_generate_roadmap_from_file", 
+      "innoscope_generate_roadmap_from_file_stream",
+      "innoscope_summarize_file"
+    ],
+    "multipart_example": {
+      "description": "In Postman, use Body -> form-data, add 'jsonrpc' field with JSON value and 'file' field with file upload",
+      "jsonrpc_field_value": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "innoscope_assess_feasibility_from_file",
+          "arguments": {
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc"
+          }
+        },
+        "id": 14
+      }
+    }
+  },
+  "existing_volvox_endpoints": {
+    "volvox_auth_login": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "volvox_auth_login",
+        "arguments": {
+          "email": "user@example.com",
+          "password": "password123"
+        }
+      },
+      "id": 15
+    },
+    "volvox_chat_ask": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "volvox_chat_ask",
+        "arguments": {
+          "question": "What is LangGraph?",
+          "document_id": "",
+          "chat_id": "",
+          "web_search": true,
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc"
+        }
+      },
+      "id": 16
+    },
+    "volvox_research_list": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "volvox_research_list",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "limit": 20,
+          "offset": 0,
+          "search": "machine learning"
+        }
+      },
+      "id": 17
+    },
+    "volvox_summarize_research": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "volvox_summarize_research",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "document_ids": ["doc1", "doc2", "doc3"]
+        }
+      },
+      "id": 18
+    }
+  },
+  "agent_workflow_endpoints": {
+    "run_agent_smart_search": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "run_agent_smart_search",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "query": "Research the latest trends in artificial intelligence and machine learning"
+        }
+      },
+      "id": 19
+    },
+    "run_agent_market_intelligence": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "run_agent_market_intelligence",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "query": "Analyze the food delivery market and create a comprehensive business proposal"
+        }
+      },
+      "id": 20
+    },
+    "run_agent_smart_qa": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "run_agent_smart_qa",
+        "arguments": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGZkYjJhNWQ4ZjdkYmFkNGFjZDgwOTkiLCJleHAiOjE3NjUzNTE3OTgsImlhdCI6MTc2NTM0ODE5OH0.CodeCPNSlv_SKiQydv5bmz8VvmafZku9xzPHcSZr6mc",
+          "query": "What are the key considerations for building a scalable web application?"
+        }
+      },
+      "id": 21
+    }
+  }
+}

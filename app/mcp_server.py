@@ -29,6 +29,21 @@ from app.agentic_tools.agentic_tools import (
     direct_research_create,direct_research_update,direct_research_delete, direct_deep_answer,
     direct_access_feasibility,direct_access_roadmap,direct_generate_proposal
 )
+from app.agentic_tools.smart_search_tools import (
+    smart_new_chat, smart_send_message, smart_message_query,
+    smart_get_history, smart_get_history_titles
+)
+from app.agentic_tools.innoscope_tools import (
+    innoscope_send_message, innoscope_get_chat_sessions, innoscope_get_session_messages,
+    innoscope_assess_feasibility_from_chat_stream, innoscope_assess_feasibility_from_file_stream,
+    innoscope_assess_feasibility_from_summary_stream, innoscope_generate_roadmap_from_file,
+    innoscope_generate_roadmap_from_chat, innoscope_generate_roadmap_from_file_stream,
+    innoscope_generate_roadmap_from_summary_stream, innoscope_summarize_text, innoscope_summarize_file
+)
+from app.agentic_tools.smart_search_tools import (
+    smart_new_chat, smart_send_message,
+    smart_get_history, smart_get_history_titles
+)
 from fastapi import File, UploadFile
 import base64
 
@@ -366,6 +381,201 @@ TOOLS = [
         },
         "required": ["token", "report_text"]
     }
+},
+{
+    "name": "smart_new_chat",
+    "description": "Create a new chat session in Smart Search API",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "user_id": {"type": "string", "description": "User ID for the chat session"}
+        },
+        "required": ["token", "user_id"]
+    }
+},
+{
+    "name": "smart_send_message",
+    "description": "Send a message to an existing Smart Search chat session",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "session_id": {"type": "string", "description": "Chat session ID"},
+            "message": {"type": "string", "description": "Message to send"},
+            "user_id": {"type": "string", "description": "User ID"},
+            "mode": {"type": "string", "description": "Chat mode (simple/deep)", "default": "simple"}
+        },
+        "required": ["token", "session_id", "message", "user_id"]
+    }
+},
+
+{
+    "name": "smart_get_chat_history",
+    "description": "Get chat history for a specific Smart Search session",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "session_id": {"type": "number", "description": "Chat session ID"}
+        },
+        "required": ["token", "session_id"]
+    }
+},
+{
+    "name": "smart_get_history_titles",
+    "description": "Get history titles for a user in Smart Search API",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "user_id": {"type": "string", "description": "User ID"}
+        },
+        "required": ["token", "user_id"]
+    }
+},
+{
+    "name": "innoscope_send_chat_message",
+    "description": "Send a message to Innoscope chat system",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "user_id": {"type": "number", "description": "User ID"},
+            "message": {"type": "string", "description": "Message to send"},
+            "session_id": {"type": "string", "description": "Optional chat session ID"}
+        },
+        "required": ["token", "user_id", "message"]
+    }
+},
+{
+    "name": "innoscope_get_chat_sessions",
+    "description": "Get all chat sessions for a user in Innoscope",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "user_id": {"type": "number", "description": "User ID"}
+        },
+        "required": ["token", "user_id"]
+    }
+},
+{
+    "name": "innoscope_get_session_messages",
+    "description": "Get all messages for a specific Innoscope chat session",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "session_id": {"type": "number", "description": "Chat session ID"},
+            "user_id": {"type": "number", "description": "User ID"}
+        },
+        "required": ["token", "session_id", "user_id"]
+    }
+},
+{
+    "name": "innoscope_assess_feasibility_from_chat",
+    "description": "Assess feasibility from Innoscope chat session with streaming",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "session_id": {"type": "number", "description": "Chat session ID"}
+        },
+        "required": ["token", "session_id"]
+    }
+},
+{
+    "name": "innoscope_assess_feasibility_from_file",
+    "description": "Generate feasibility assessment from uploaded file with streaming",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"}
+        },
+        "required": ["token"]
+    }
+},
+{
+    "name": "generate_feasibility_from_summary",
+    "description": "Assess feasibility from text summary with streaming",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "summary": {"type": "string", "description": "Project summary text"}
+        },
+        "required": ["token", "summary"]
+    }
+},
+{
+    "name": "innoscope_generate_roadmap_from_file",
+    "description": "Generate roadmap from uploaded file",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"}
+        },
+        "required": ["token"]
+    }
+},
+{
+    "name": "innoscope_generate_roadmap_from_chat",
+    "description": "Generate roadmap from Innoscope chat session",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "session_id": {"type": "number", "description": "Chat session ID"}
+        },
+        "required": ["token", "session_id"]
+    }
+},
+{
+    "name": "innoscope_generate_roadmap_from_file_stream",
+    "description": "Generate roadmap from file with streaming",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"}
+        },
+        "required": ["token"]
+    }
+},
+{
+    "name": "generate_roadmap_from_summary",
+    "description": "Generate roadmap from summary with streaming",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "summary": {"type": "string", "description": "Project summary text"}
+        },
+        "required": ["token", "summary"]
+    }
+},
+{
+    "name": "innoscope_summarize_text",
+    "description": "Summarize text content using Innoscope",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "text": {"type": "string", "description": "Text to summarize"}
+        },
+        "required": ["token", "text"]
+    }
+},
+{
+    "name": "innoscope_summarize_file",
+    "description": "Summarize uploaded file using Innoscope",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"}
+        },
+        "required": ["token"]
+    }
 }
 ]
 
@@ -650,6 +860,116 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
                 return safe_return({"pdf_base64": pdf_b64})
 
+            elif tool_name == "smart_new_chat":
+                result = await smart_new_chat(
+                    user_id=arguments["user_id"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "smart_send_message":
+                result = await smart_send_message(
+                    session_id=arguments["session_id"],
+                    message=arguments["message"],
+                    user_id=arguments["user_id"],
+                    mode=arguments.get("mode", "simple")
+                )
+                return safe_return(result)
+
+            
+            elif tool_name == "smart_get_chat_history":
+                result = await smart_get_history(
+                    session_id=arguments["session_id"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "smart_get_history_titles":
+                result = await smart_get_history_titles(
+                    user_id=arguments["user_id"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_send_chat_message":
+                result = await innoscope_send_message(
+                    user_id=arguments["user_id"],
+                    message=arguments["message"],
+                    session_id=arguments.get("session_id")
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_get_chat_sessions":
+                result = await innoscope_get_chat_sessions(
+                    user_id=arguments["user_id"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_get_session_messages":
+                result = await innoscope_get_session_messages(
+                    session_id=arguments["session_id"],
+                    user_id=arguments["user_id"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_assess_feasibility_from_chat":
+                result = await innoscope_assess_feasibility_from_chat_stream(
+                    session_id=arguments["session_id"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_assess_feasibility_from_file":
+                file = arguments.get("uploaded_file")
+                if not file:
+                    return safe_return({"error": "File is required for feasibility assessment"}, True)
+                
+                result = await innoscope_assess_feasibility_from_file_stream(file)
+                return safe_return(result)
+
+            elif tool_name == "generate_feasibility_from_summary":
+                result = await innoscope_assess_feasibility_from_summary_stream(
+                    summary=arguments["summary"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_generate_roadmap_from_file":
+                file = arguments.get("uploaded_file")
+                if not file:
+                    return safe_return({"error": "File is required for roadmap generation"}, True)
+                
+                result = await innoscope_generate_roadmap_from_file(file)
+                return safe_return(result)
+
+            elif tool_name == "innoscope_generate_roadmap_from_chat":
+                result = await innoscope_generate_roadmap_from_chat(
+                    session_id=arguments["session_id"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_generate_roadmap_from_file_stream":
+                file = arguments.get("uploaded_file")
+                if not file:
+                    return safe_return({"error": "File is required for roadmap generation"}, True)
+                
+                result = await innoscope_generate_roadmap_from_file_stream(file)
+                return safe_return(result)
+
+            elif tool_name == "generate_roadmap_from_summary":
+                result = await innoscope_generate_roadmap_from_summary_stream(
+                    summary=arguments["summary"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_summarize_text":
+                result = await innoscope_summarize_text(
+                    text=arguments["text"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "innoscope_summarize_file":
+                file = arguments.get("uploaded_file")
+                if not file:
+                    return safe_return({"error": "File is required for summarization"}, True)
+                
+                result = await innoscope_summarize_file(file)
+                return safe_return(result)
 
             else:
                 return safe_return({"error": f"Unknown tool: {tool_name}"}, True)
