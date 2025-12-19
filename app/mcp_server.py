@@ -388,10 +388,9 @@ TOOLS = [
     "inputSchema": {
         "type": "object",
         "properties": {
-            "token": {"type": "string"},
-            "user_id": {"type": "string", "description": "User ID for the chat session"}
+            "token": {"type": "string"}
         },
-        "required": ["token", "user_id"]
+        "required": ["token"]
     }
 },
 {
@@ -403,10 +402,9 @@ TOOLS = [
             "token": {"type": "string"},
             "session_id": {"type": "string", "description": "Chat session ID"},
             "message": {"type": "string", "description": "Message to send"},
-            "user_id": {"type": "string", "description": "User ID"},
             "mode": {"type": "string", "description": "Chat mode (simple/deep)", "default": "simple"}
         },
-        "required": ["token", "session_id", "message", "user_id"]
+        "required": ["token", "session_id", "message"]
     }
 },
 
@@ -429,9 +427,8 @@ TOOLS = [
         "type": "object",
         "properties": {
             "token": {"type": "string"},
-            "user_id": {"type": "string", "description": "User ID"}
         },
-        "required": ["token", "user_id"]
+        "required": ["token"]
     }
 },
 {
@@ -441,11 +438,10 @@ TOOLS = [
         "type": "object",
         "properties": {
             "token": {"type": "string"},
-            "user_id": {"type": "number", "description": "User ID"},
             "message": {"type": "string", "description": "Message to send"},
             "session_id": {"type": "string", "description": "Optional chat session ID"}
         },
-        "required": ["token", "user_id", "message"]
+        "required": ["token", "message"]
     }
 },
 {
@@ -454,10 +450,9 @@ TOOLS = [
     "inputSchema": {
         "type": "object",
         "properties": {
-            "token": {"type": "string"},
-            "user_id": {"type": "number", "description": "User ID"}
+            "token": {"type": "string"}
         },
-        "required": ["token", "user_id"]
+        "required": ["token"]
     }
 },
 {
@@ -467,10 +462,9 @@ TOOLS = [
         "type": "object",
         "properties": {
             "token": {"type": "string"},
-            "session_id": {"type": "number", "description": "Chat session ID"},
-            "user_id": {"type": "number", "description": "User ID"}
+            "session_id": {"type": "number", "description": "Chat session ID"}
         },
-        "required": ["token", "session_id", "user_id"]
+        "required": ["token", "session_id"]
     }
 },
 {
@@ -862,7 +856,7 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
 
             elif tool_name == "smart_new_chat":
                 result = await smart_new_chat(
-                    user_id=arguments["user_id"]
+                    user_id=str(current_user.id),
                 )
                 return safe_return(result)
 
@@ -870,7 +864,7 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                 result = await smart_send_message(
                     session_id=arguments["session_id"],
                     message=arguments["message"],
-                    user_id=arguments["user_id"],
+                    user_id=str(current_user.id),
                     mode=arguments.get("mode", "simple")
                 )
                 return safe_return(result)
@@ -884,13 +878,13 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
 
             elif tool_name == "smart_get_history_titles":
                 result = await smart_get_history_titles(
-                    user_id=arguments["user_id"]
+                    user_id=str(current_user.id),
                 )
                 return safe_return(result)
 
             elif tool_name == "innoscope_send_chat_message":
                 result = await innoscope_send_message(
-                    user_id=arguments["user_id"],
+                    user_id=str(current_user.id),
                     message=arguments["message"],
                     session_id=arguments.get("session_id")
                 )
@@ -898,14 +892,14 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
 
             elif tool_name == "innoscope_get_chat_sessions":
                 result = await innoscope_get_chat_sessions(
-                    user_id=arguments["user_id"]
+                    user_id=str(current_user.id),
                 )
                 return safe_return(result)
 
             elif tool_name == "innoscope_get_session_messages":
                 result = await innoscope_get_session_messages(
                     session_id=arguments["session_id"],
-                    user_id=arguments["user_id"]
+                    user_id=str(current_user.id)
                 )
                 return safe_return(result)
 
