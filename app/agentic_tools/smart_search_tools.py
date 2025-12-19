@@ -9,7 +9,7 @@ async def smart_new_chat(user_id: str) -> Dict[str, Any]:
     async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
         r = await client.post(
             f"{SMART_API}/chat/new",
-            json={"userId": user_id}
+            params={"userId": user_id}
         )
         return r.json() if r.status_code == 200 else {"error": r.text}
 
