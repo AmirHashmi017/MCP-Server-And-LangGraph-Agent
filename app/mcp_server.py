@@ -439,7 +439,7 @@ TOOLS = [
         "properties": {
             "token": {"type": "string"},
             "message": {"type": "string", "description": "Message to send"},
-            "session_id": {"type": "string", "description": "Optional chat session ID"}
+            "session_id": {"type": "number", "description": "Optional chat session ID"}
         },
         "required": ["token", "message"]
     }

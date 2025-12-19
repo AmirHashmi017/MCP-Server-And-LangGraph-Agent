@@ -6,13 +6,12 @@ import os
 INNOSCOPE_API = os.getenv("INNOSCOPE_API_URL", "https://mustafanoor-innoscope-backend.hf.space")
 DEFAULT_TIMEOUT = 300.0
 
-# Chat endpoints
 async def innoscope_send_message(
     user_id: int,
     message: str,
-    session_id: Optional[str] = None
+    session_id: Optional[int] = None
 ) -> Dict[str, Any]:
-    """Send a message to Innoscope chat"""
+    
     payload = {
         "user_id": user_id,
         "message": message
@@ -28,7 +27,7 @@ async def innoscope_send_message(
         return r.json() if r.status_code == 200 else {"error": r.text}
 
 async def innoscope_get_chat_sessions(user_id: int) -> Dict[str, Any]:
-    """Get all chat sessions for a user"""
+    
     async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
         r = await client.get(
             f"{INNOSCOPE_API}/chat/sessions",
@@ -40,7 +39,7 @@ async def innoscope_get_session_messages(
     session_id: int,
     user_id: int
 ) -> Dict[str, Any]:
-    """Get all messages for a specific chat session"""
+    
     async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
         r = await client.get(
             f"{INNOSCOPE_API}/chat/sessions/{session_id}/messages",
