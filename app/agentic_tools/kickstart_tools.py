@@ -2,7 +2,8 @@ import httpx
 from typing import Dict, Any, Optional
 import os
 
-KICKSTART_API = os.getenv("KICKSTART_JS_API_URL", "https://software-project-management-pwnl.vercel.app/")
+# KICKSTART_API = os.getenv("KICKSTART_JS_API_URL", "https://software-project-management-pwnl.vercel.app/")
+KICKSTART_API= "http://localhost:5000"
 DEFAULT_TIMEOUT = 300.0
 
 async def kickstart_create_proposal(
@@ -56,12 +57,9 @@ async def kickstart_delete_proposal(
     userid: str
 ) -> Dict[str, Any]:
     """Delete a proposal"""
-    payload = {"userid": userid}
-    
     async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
         r = await client.delete(
-            f"{KICKSTART_API}/api/proposals/{proposal_id}",
-            json=payload
+            f"{KICKSTART_API}/api/proposals/{userid}/{proposal_id}"
         )
         return r.json() if r.status_code == 200 else {"error": r.text}
 

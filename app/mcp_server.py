@@ -1094,7 +1094,6 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
             elif tool_name == "kickstart_update_proposal":
                 
                 proposal_id = arguments.pop("proposal_id")
-                userid = arguments.pop("userid")
                 update_data = {k: v for k, v in arguments.items() if k != "token"}
                 
                 result = await kickstart_update_proposal(
