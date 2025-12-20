@@ -2,8 +2,7 @@ import httpx
 from typing import Dict, Any, Optional
 import os
 
-# KICKSTART_API = os.getenv("KICKSTART_JS_API_URL", "https://software-project-management-pwnl.vercel.app/")
-KICKSTART_API= "http://localhost:5000"
+KICKSTART_API = os.getenv("KICKSTART_JS_API_URL", "https://software-project-management-pwnl.vercel.app")
 DEFAULT_TIMEOUT = 300.0
 
 async def kickstart_create_proposal(
