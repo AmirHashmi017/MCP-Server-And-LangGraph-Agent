@@ -40,6 +40,11 @@ from app.agentic_tools.innoscope_tools import (
     innoscope_generate_roadmap_from_chat, innoscope_generate_roadmap_from_file_stream,
     innoscope_generate_roadmap_from_summary_stream, innoscope_summarize_text, innoscope_summarize_file
 )
+from app.agentic_tools.kickstart_tools import (
+    kickstart_create_proposal, kickstart_get_proposals, kickstart_get_proposal,
+    kickstart_update_proposal, kickstart_delete_proposal, kickstart_generate_proposal_ai,
+    kickstart_edit_proposal_ai
+)
 from app.agentic_tools.smart_search_tools import (
     smart_new_chat, smart_send_message,
     smart_get_history, smart_get_history_titles
@@ -63,6 +68,8 @@ SMART_API= os.getenv("SMART_API_URL", "https://smart-research-answering-backend.
 INNOSCOPE_API= os.getenv("INNOSCOPE_API_URL", "https://mustafanoor-innoscope-backend.hf.space")
 
 KICKSTART_API= os.getenv("KICKSTART_API_URL", "https://proposal-generation-for-funding-production.up.railway.app")
+
+KICKSTART_API= os.getenv("KICKSTART_JS_API_URL", "https://software-project-management-pwnl.vercel.app/")
 
 app = FastAPI(title="Unified MCP Server", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -570,6 +577,103 @@ TOOLS = [
         },
         "required": ["token"]
     }
+},
+{
+    "name": "kickstart_create_proposal",
+    "description": "Create a new proposal in Kickstart system",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "title": {"type": "string", "description": "Proposal title"},
+            "description": {"type": "string", "description": "Proposal description"},
+            "budget": {"type": "number", "description": "Proposal budget"},
+            "timeline": {"type": "string", "description": "Project timeline"},
+            "category": {"type": "string", "description": "Proposal category"}
+        },
+        "required": ["token",  "title", "description"]
+    }
+},
+{
+    "name": "kickstart_get_proposals",
+    "description": "Get all proposals for a user",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+        },
+        "required": ["token"]
+    }
+},
+{
+    "name": "kickstart_get_proposal",
+    "description": "Get a specific proposal by ID",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "proposal_id": {"type": "string", "description": "Proposal ID"}
+        },
+        "required": ["token", "proposal_id"]
+    }
+},
+{
+    "name": "kickstart_update_proposal",
+    "description": "Update an existing proposal",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "proposal_id": {"type": "string", "description": "Proposal ID"},
+            "title": {"type": "string", "description": "Updated title"},
+            "description": {"type": "string", "description": "Updated description"},
+            "budget": {"type": "number", "description": "Updated budget"},
+            "timeline": {"type": "string", "description": "Updated timeline"},
+            "category": {"type": "string", "description": "Updated category"}
+        },
+        "required": ["token", "proposal_id"]
+    }
+},
+{
+    "name": "kickstart_delete_proposal",
+    "description": "Delete a proposal",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "proposal_id": {"type": "string", "description": "Proposal ID"}
+        },
+        "required": ["token", "proposal_id"]
+    }
+},
+{
+    "name": "kickstart_generate_proposal_ai",
+    "description": "Generate AI proposal content for existing proposal",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "proposal_id": {"type": "string", "description": "Proposal ID"},
+            "prompt": {"type": "string", "description": "Generation prompt"},
+            "sections": {"type": "array", "items": {"type": "string"}, "description": "Sections to generate"}
+        },
+        "required": ["token", "proposal_id"]
+    }
+},
+{
+    "name": "kickstart_edit_proposal_ai",
+    "description": "Edit proposal using AI",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "proposal_id": {"type": "string", "description": "Proposal ID"},
+            "edit_instructions": {"type": "string", "description": "Instructions for editing"},
+            "section": {"type": "string", "description": "Section to edit"},
+            "content": {"type": "string", "description": "Content to edit"}
+        },
+        "required": ["token", "proposal_id", "edit_instructions"]
+    }
 }
 ]
 
@@ -963,6 +1067,68 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
                     return safe_return({"error": "File is required for summarization"}, True)
                 
                 result = await innoscope_summarize_file(file)
+                return safe_return(result)
+
+            elif tool_name == "kickstart_create_proposal":
+                proposal_data = {k: v for k, v in arguments.items() if k != "token"}
+                
+                result = await kickstart_create_proposal(
+                    userid=str(current_user.id),
+                    proposal_data=proposal_data
+                )
+                return safe_return(result)
+
+            elif tool_name == "kickstart_get_proposals":
+                result = await kickstart_get_proposals(
+                    userid=str(current_user.id)
+                )
+                return safe_return(result)
+
+            elif tool_name == "kickstart_get_proposal":
+                result = await kickstart_get_proposal(
+                    userid=str(current_user.id),
+                    proposal_id=arguments["proposal_id"]
+                )
+                return safe_return(result)
+
+            elif tool_name == "kickstart_update_proposal":
+                
+                proposal_id = arguments.pop("proposal_id")
+                userid = arguments.pop("userid")
+                update_data = {k: v for k, v in arguments.items() if k != "token"}
+                
+                result = await kickstart_update_proposal(
+                    proposal_id=proposal_id,
+                    userid=str(current_user.id),
+                    update_data=update_data
+                )
+                return safe_return(result)
+
+            elif tool_name == "kickstart_delete_proposal":
+                result = await kickstart_delete_proposal(
+                    proposal_id=arguments["proposal_id"],
+                    userid=str(current_user.id)
+                )
+                return safe_return(result)
+
+            elif tool_name == "kickstart_generate_proposal_ai":
+                proposal_id = arguments.pop("proposal_id")
+                generation_data = {k: v for k, v in arguments.items() if k != "token"}
+                
+                result = await kickstart_generate_proposal_ai(
+                    proposal_id=proposal_id,
+                    generation_data=generation_data if generation_data else None
+                )
+                return safe_return(result)
+
+            elif tool_name == "kickstart_edit_proposal_ai":
+                proposal_id = arguments.pop("proposal_id")
+                edit_data = {k: v for k, v in arguments.items() if k != "token"}
+                
+                result = await kickstart_edit_proposal_ai(
+                    proposal_id=proposal_id,
+                    edit_data=edit_data
+                )
                 return safe_return(result)
 
             else:
