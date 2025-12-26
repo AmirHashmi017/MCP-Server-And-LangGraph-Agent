@@ -31,7 +31,7 @@ from app.agentic_tools.agentic_tools import (
 )
 from app.agentic_tools.smart_search_tools import (
     smart_new_chat, smart_send_message, smart_message_query,
-    smart_get_history, smart_get_history_titles
+    smart_get_history, smart_get_history_titles, smart_delete_chat
 )
 from app.agentic_tools.innoscope_tools import (
     innoscope_send_message, innoscope_get_chat_sessions, innoscope_get_session_messages,
@@ -434,6 +434,18 @@ TOOLS = [
         "type": "object",
         "properties": {
             "token": {"type": "string"},
+        },
+        "required": ["token"]
+    }
+},
+{
+    "name": "smart_delete_chat",
+    "description": "Delete Chat session from chat history",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "token": {"type": "string"},
+            "session_id": {"type": "number", "description": "Chat session ID"}
         },
         "required": ["token"]
     }
@@ -983,6 +995,12 @@ async def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> MCPToolResu
             elif tool_name == "smart_get_history_titles":
                 result = await smart_get_history_titles(
                     user_id=str(current_user.id),
+                )
+                return safe_return(result)
+
+            elif tool_name == "smart_delete_chat":
+                result = await smart_delete_chat(
+                    session_id=arguments["session_id"]
                 )
                 return safe_return(result)
 

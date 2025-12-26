@@ -54,3 +54,8 @@ async def smart_get_history_titles(user_id: str) -> Dict[str, Any]:
     async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
         r = await client.get(f"{SMART_API}/chat/getHistoryTitle/{user_id}")
         return r.json() if r.status_code == 200 else {"error": r.text}
+
+async def smart_delete_chat(session_id: int) -> Dict[str, Any]:
+    async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
+        r = await client.delete(f"{SMART_API}/chat/delete/{session_id}")
+        return r.json() if r.status_code == 200 else {"error": r.text}
