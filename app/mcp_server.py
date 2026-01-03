@@ -61,7 +61,7 @@ async def get_user_from_token(token: str):
 
 load_dotenv()
 
-VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://volvox-backend-integrated-production.up.railway.app/api/v1")
+VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://amirhashmi017-volvox-backend.hf.space/api/v1")
 
 SMART_API= os.getenv("SMART_API_URL", "https://smart-research-answering-backend.up.railway.app")
 
