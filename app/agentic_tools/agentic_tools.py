@@ -7,7 +7,7 @@ import os
 VOLVOX_API = os.getenv("VOLVOX_API_URL", "https://amirhashmi017-volvox-backend.hf.space/api/v1")
 SMART_API = os.getenv("SMART_API_URL", "https://smart-research-answering-backend.up.railway.app")
 INNOSCOPE_API= os.getenv("INNOSCOPE_API_URL", "https://mustafanoor-innoscope-backend.hf.space")
-KICKSTART_API= os.getenv("KICKSTART_API_URL", "https://proposal-generation-for-funding-production.up.railway.app")
+KICKSTART_API= os.getenv("KICKSTART_API_URL", "https://salmananas-spm.hf.space/generate-proposal")
 
 DEFAULT_TIMEOUT = 300.0   
 

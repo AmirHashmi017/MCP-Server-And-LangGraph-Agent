@@ -67,9 +67,9 @@ SMART_API= os.getenv("SMART_API_URL", "https://smart-research-answering-backend.
 
 INNOSCOPE_API= os.getenv("INNOSCOPE_API_URL", "https://mustafanoor-innoscope-backend.hf.space")
 
-KICKSTART_API= os.getenv("KICKSTART_API_URL", "https://proposal-generation-for-funding-production.up.railway.app")
+KICKSTART_API= os.getenv("KICKSTART_API_URL", "https://salmananas-spm.hf.space/generate-proposal")
 
-KICKSTART_API= os.getenv("KICKSTART_JS_API_URL", "https://software-project-management-pwnl.vercel.app")
+KICKSTART_API_JS= os.getenv("KICKSTART_JS_API_URL", "https://software-project-management-pwnl.vercel.app")
 
 app = FastAPI(title="Unified MCP Server", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
