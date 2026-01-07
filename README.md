@@ -10,7 +10,7 @@
 ---
 ## 📌 Overview
 
-**MCP Server & Agentic Workflows** is a **large-scale, multi-system AI platform** designed to automate **research discovery, intelligence analysis, and business proposal generation** using **agentic workflows**.
+**MCP Server & Agentic Workflows** is a **agent-based, multi-system AI platform** designed to automate **research discovery, intelligence analysis, and business proposal generation** using **agentic workflows**.
 
 This project integrates **four independent AI systems** into a **single orchestrated ecosystem** using a centralized **MCP (Model Context Protocol) Server** and **LangGraph-based agentic pipelines**, executed under a **Scrum of Scrums (SoS)** model as part of **Software Project Management (SPM)**.
 
