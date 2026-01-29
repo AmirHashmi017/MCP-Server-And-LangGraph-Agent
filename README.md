@@ -5,7 +5,7 @@
 ---
 
 ## 🌐 Live Demo
-🔗 **Volvox (Live):**  https://research-mcp-frontend-suit-alpha.vercel.app
+🔗 **Live Website:**  https://research-mcp-frontend-suit-alpha.vercel.app
 
 ---
 ## 📌 Overview
